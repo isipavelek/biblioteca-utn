@@ -34,7 +34,13 @@ const LoginPage = ({ admins, setCurrentUser }) => {
   };
 
   return (
-    <div className="flex items-center justify-center animate-fade-in" style={{ minHeight: '60vh' }}>
+    <div style={{ 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      minHeight: '80vh',
+      width: '100%'
+    }} className="animate-fade-in">
       <motion.div 
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
