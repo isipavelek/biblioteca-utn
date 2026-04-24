@@ -62,14 +62,18 @@ function App() {
         const checkAndMigrate = async (key, fireData, initialData) => {
           if (!fireData || fireData.length === 0) {
             const localSaved = localStorage.getItem(`library_${key}`);
-            const dataToMigrate = localSaved ? JSON.parse(localSaved) : initialData;
+            let dataToMigrate = localSaved ? JSON.parse(localSaved) : initialData;
             
             if (dataToMigrate && dataToMigrate.length > 0) {
               console.log(`Migrating ${key} to Firebase...`);
               const batch = writeBatch(db);
               dataToMigrate.forEach(item => {
-                const itemRef = doc(db, key, String(item.id || Date.now() + Math.random()));
-                batch.set(itemRef, item);
+                const id = String(item.id || Date.now() + Math.random());
+                const itemRef = doc(db, key, id);
+                
+                // Firestore REQUIRES objects. If item is a string (common in categories), wrap it.
+                const dataObject = typeof item === 'object' ? item : { name: item, id: id };
+                batch.set(itemRef, dataObject);
               });
               await batch.commit();
               return dataToMigrate;
@@ -81,13 +85,14 @@ function App() {
         const finalBooks = await checkAndMigrate('books', results.books, initialBooks);
         const finalStudents = await checkAndMigrate('students', results.students, initialStudents);
         const finalLoans = await checkAndMigrate('loans', results.loans, initialLoans);
-        const finalCategories = await checkAndMigrate('categories', (results.categories || []).map(c => c.name || c), initialCategories);
+        const finalCategories = await checkAndMigrate('categories', results.categories, initialCategories);
         const finalAdmins = await checkAndMigrate('admins', results.admins, initialAdmins);
 
         setBooks(finalBooks);
         setStudents(finalStudents);
         setLoans(finalLoans);
-        setCategories(finalCategories);
+        // Normalize categories back to an array of strings for the UI if needed
+        setCategories(finalCategories.map(c => typeof c === 'object' ? (c.name || c.id) : c));
         setAdmins(finalAdmins);
       } catch (error) {
         console.error("Critical error fetching from Firebase:", error);
