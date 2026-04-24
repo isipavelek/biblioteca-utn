@@ -279,6 +279,13 @@ const AdminStudents = ({ students, setStudents, deleteStudent }) => {
             </div>
           </div>
         ))}
+        {filteredStudents.length === 0 && (
+          <div className="col-span-full py-20 text-center glass-card">
+            <Users size={48} className="mx-auto mb-4 text-muted opacity-20" />
+            <p className="text-xl text-muted">No se encontraron usuarios en la base de datos</p>
+            <p className="text-sm text-muted mt-2">Prueba importando un archivo Excel o agregando uno manualmente</p>
+          </div>
+        )}
       </div>
 
       {isModalOpen && createPortal(

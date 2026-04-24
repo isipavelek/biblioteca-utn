@@ -36,26 +36,29 @@ function App() {
   // Fetch all data from Firebase
   useEffect(() => {
     const fetchData = async () => {
-      console.log("Starting Firebase fetch...");
+      console.log("Fetching data from Firebase... Auth status:", currentUser ? "Authenticated" : "Guest");
       try {
         const collections = ['books', 'students', 'loans', 'categories', 'admins'];
         const results = {};
 
         for (const colName of collections) {
-          const querySnapshot = await getDocs(collection(db, colName));
-          const data = querySnapshot.docs.map(doc => {
-            const docData = doc.data();
-            // Ensure ID is consistent
-            return { 
-              ...docData, 
-              id: docData.id || doc.id 
-            };
-          });
-          console.log(`Fetched ${data.length} items from [${colName}]`);
-          results[colName] = data;
+          try {
+            const querySnapshot = await getDocs(collection(db, colName));
+            const data = querySnapshot.docs.map(doc => {
+              const docData = doc.data();
+              return { 
+                ...docData, 
+                id: docData.id || doc.id 
+              };
+            });
+            results[colName] = data;
+          } catch (colErr) {
+            console.warn(`Could not fetch ${colName}:`, colErr.message);
+            results[colName] = [];
+          }
         }
 
-        // Migration Logic: If Firebase is empty but localStorage has data, migrate it
+        // Migration Logic
         const checkAndMigrate = async (key, fireData, initialData) => {
           if (!fireData || fireData.length === 0) {
             const localSaved = localStorage.getItem(`library_${key}`);
@@ -81,8 +84,6 @@ function App() {
         const finalCategories = await checkAndMigrate('categories', (results.categories || []).map(c => c.name || c), initialCategories);
         const finalAdmins = await checkAndMigrate('admins', results.admins, initialAdmins);
 
-        console.log("Data initialized:", { books: finalBooks.length, students: finalStudents.length });
-
         setBooks(finalBooks);
         setStudents(finalStudents);
         setLoans(finalLoans);
@@ -96,7 +97,7 @@ function App() {
     };
 
     fetchData();
-  }, []);
+  }, [currentUser]); // Re-fetch when user logs in/out
 
   // Sync state to Firebase on changes
   // Note: For production, it's better to write to Firestore in the handlers (AdminInventory, etc.)
