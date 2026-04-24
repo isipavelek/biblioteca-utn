@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import * as XLSX from 'xlsx';
 import ConfirmDialog from '../components/ConfirmDialog';
 
-const AdminInventory = ({ books, setBooks, categories }) => {
+const AdminInventory = ({ books, setBooks, categories, deleteItem }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBook, setEditingBook] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -79,6 +79,7 @@ const AdminInventory = ({ books, setBooks, categories }) => {
 
   const confirmDelete = () => {
     if (deleteConfirm.id) {
+      if (deleteItem) deleteItem(deleteConfirm.id);
       setBooks(books.filter(b => b.id !== deleteConfirm.id));
       setDeleteConfirm({ isOpen: false, id: null });
     }

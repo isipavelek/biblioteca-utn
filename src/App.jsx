@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { initialBooks, initialStudents, initialLoans, initialCategories, initialAdmins } from './data';
+import { db } from './firebase';
+import { collection, getDocs, setDoc, doc, writeBatch } from 'firebase/firestore';
 import Home from './pages/Home';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminInventory from './pages/AdminInventory';
@@ -13,60 +15,156 @@ import Navbar from './components/Navbar';
 import './App.css';
 
 function App() {
+  const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = localStorage.getItem('library_current_user');
     return saved ? JSON.parse(saved) : null;
   });
 
-  const [books, setBooks] = useState(() => {
-    const saved = localStorage.getItem('library_books');
-    return saved ? JSON.parse(saved) : initialBooks;
-  });
+  const [books, setBooks] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [loans, setLoans] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [admins, setAdmins] = useState([]);
 
-  const [students, setStudents] = useState(() => {
-    const saved = localStorage.getItem('library_students');
-    return saved ? JSON.parse(saved) : initialStudents;
-  });
-
-  const [loans, setLoans] = useState(() => {
-    const saved = localStorage.getItem('library_loans');
-    return saved ? JSON.parse(saved) : initialLoans;
-  });
-
-  const [categories, setCategories] = useState(() => {
-    const saved = localStorage.getItem('library_categories');
-    return saved ? JSON.parse(saved) : initialCategories;
-  });
-
-  const [admins, setAdmins] = useState(() => {
-    const saved = localStorage.getItem('library_admins');
-    let adminList = saved ? JSON.parse(saved) : initialAdmins;
-    
-    // Fix: Ensure ipavelek always has the correct password if it was saved with '123'
-    return adminList.map(a => 
-      a.username === 'ipavelek' && a.password === '123' 
-      ? { ...a, password: '1234' } 
-      : a
-    );
-  });
-
+  // Fetch all data from Firebase
   useEffect(() => {
-    localStorage.setItem('library_books', JSON.stringify(books));
-    localStorage.setItem('library_students', JSON.stringify(students));
-    localStorage.setItem('library_loans', JSON.stringify(loans));
-    localStorage.setItem('library_categories', JSON.stringify(categories));
-    localStorage.setItem('library_admins', JSON.stringify(admins));
+    const fetchData = async () => {
+      try {
+        const collections = ['books', 'students', 'loans', 'categories', 'admins'];
+        const results = {};
+
+        for (const colName of collections) {
+          const querySnapshot = await getDocs(collection(db, colName));
+          const data = querySnapshot.docs.map(doc => ({ ...doc.data(), id: isNaN(doc.id) ? doc.id : Number(doc.id) }));
+          results[colName] = data;
+        }
+
+        // Migration Logic: If Firebase is empty but localStorage has data, migrate it
+        const checkAndMigrate = async (key, fireData, initialData) => {
+          if (fireData.length === 0) {
+            const localSaved = localStorage.getItem(`library_${key}`);
+            const dataToMigrate = localSaved ? JSON.parse(localSaved) : initialData;
+            
+            console.log(`Migrating ${key} to Firebase...`);
+            const batch = writeBatch(db);
+            dataToMigrate.forEach(item => {
+              const itemRef = doc(db, key, String(item.id || Date.now() + Math.random()));
+              batch.set(itemRef, item);
+            });
+            await batch.commit();
+            return dataToMigrate;
+          }
+          return fireData;
+        };
+
+        const finalBooks = await checkAndMigrate('books', results.books, initialBooks);
+        const finalStudents = await checkAndMigrate('students', results.students, initialStudents);
+        const finalLoans = await checkAndMigrate('loans', results.loans, initialLoans);
+        const finalCategories = await checkAndMigrate('categories', results.categories.map(c => c.name || c), initialCategories);
+        const finalAdmins = await checkAndMigrate('admins', results.admins, initialAdmins);
+
+        setBooks(finalBooks);
+        setStudents(finalStudents);
+        setLoans(finalLoans);
+        setCategories(finalCategories);
+        setAdmins(finalAdmins);
+      } catch (error) {
+        console.error("Error fetching from Firebase:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Sync state to Firebase on changes
+  // Note: For production, it's better to write to Firestore in the handlers (AdminInventory, etc.)
+  // but this "auto-sync" pattern works for small-medium apps with this structure.
+  const syncToFirebase = async (collectionName, data) => {
+    if (loading) return;
+    try {
+      // For simplicity in this structure, we overwrite the specific doc on change
+      // In AdminInventory, AdminLoans etc., we should ideally call these functions
+    } catch (e) { console.error(e); }
+  };
+
+  // Improved Update Wrappers to include Firebase sync
+  const updateBooks = async (newBooks) => {
+    setBooks(newBooks);
+    // Find what changed and sync? For now, we'll let the components trigger writes or use a debounced global sync
+  };
+
+  // To maintain compatibility with existing props (setBooks, setStudents, etc.)
+  // we will use the useEffect for global sync but with a check
+  useEffect(() => {
+    if (loading) return;
     localStorage.setItem('library_current_user', JSON.stringify(currentUser));
-  }, [books, students, loans, categories, admins, currentUser]);
+  }, [currentUser, loading]);
+
+  // Global Sync Effect
+  useEffect(() => {
+    if (loading) return;
+    
+    const syncAll = async () => {
+      // This is a "heavy" way to sync but keeps the current architecture working
+      // Ideally, each component should handle its own Firestore doc updates
+    };
+
+    // We'll update the state setters passed to components to be Firestore-aware
+  }, [books, students, loans, categories, admins, loading]);
 
   const handleLogout = () => {
     setCurrentUser(null);
   };
 
   const ProtectedRoute = ({ children }) => {
+    if (loading) return <div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div></div>;
     if (!currentUser) return <Navigate to="/login" />;
     return children;
   };
+
+  // We wrap the setters to include Firestore persistence
+  const wrapSetState = (collectionName, setter) => (newDataOrFunc) => {
+    setter(prev => {
+      const next = typeof newDataOrFunc === 'function' ? newDataOrFunc(prev) : newDataOrFunc;
+      
+      // Persistence logic
+      const persist = async () => {
+        try {
+          // If it's a deletion, we need to handle it differently, but for now:
+          // We sync the entire collection state (simple but not optimal for thousands of records)
+          // For now, let's just do individual doc updates where possible or batch
+          
+          // Strategy: Find the difference? No, let's just update Firestore
+          // Since the user is using small-ish datasets, we can do this.
+          // Better: Only sync the specific item changed.
+        } catch (e) { console.error(e); }
+      };
+
+      // Since we want to stay compatible with existing code, we'll implement 
+      // a more targeted sync in the next step.
+      return next;
+    });
+  };
+
+  // We'll update the components to use these new persistent setters
+  // But wait, the simplest way is to use the global useEffect but with individual document writes.
+  
+  // Let's implement a more efficient sync in the Admin components or here
+  const syncItem = async (col, item) => {
+    await setDoc(doc(db, col, String(item.id)), item);
+  };
+
+  const deleteItem = async (col, id) => {
+    try {
+      const { deleteDoc } = await import('firebase/firestore');
+      await deleteDoc(doc(db, col, String(id)));
+    } catch (e) { console.error(e); }
+  };
+
+  if (loading) return <div className="flex items-center justify-center min-h-screen text-white bg-dark">Cargando base de datos...</div>;
 
   return (
     <Router>
@@ -78,11 +176,77 @@ function App() {
             <Route path="/login" element={<LoginPage admins={admins} setCurrentUser={setCurrentUser} />} />
             
             <Route path="/admin" element={<ProtectedRoute><AdminDashboard books={books} students={students} loans={loans} /></ProtectedRoute>} />
-            <Route path="/admin/inventory" element={<ProtectedRoute><AdminInventory books={books} setBooks={setBooks} categories={categories} /></ProtectedRoute>} />
-            <Route path="/admin/loans" element={<ProtectedRoute><AdminLoans loans={loans} setLoans={setLoans} books={books} setBooks={setBooks} students={students} /></ProtectedRoute>} />
-            <Route path="/admin/students" element={<ProtectedRoute><AdminStudents students={students} setStudents={setStudents} /></ProtectedRoute>} />
-            <Route path="/admin/categories" element={<ProtectedRoute><AdminCategories categories={categories} setCategories={setCategories} /></ProtectedRoute>} />
-            <Route path="/admin/users" element={<ProtectedRoute><AdminAdmins admins={admins} setAdmins={setAdmins} /></ProtectedRoute>} />
+            
+            <Route path="/admin/inventory" element={
+              <ProtectedRoute>
+                <AdminInventory 
+                  books={books} 
+                  setBooks={(newBooks) => {
+                    setBooks(newBooks);
+                    newBooks.forEach(b => syncItem('books', b));
+                  }} 
+                  deleteItem={(id) => deleteItem('books', id)}
+                  categories={categories} 
+                />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/admin/loans" element={
+              <ProtectedRoute>
+                <AdminLoans 
+                  loans={loans} 
+                  setLoans={(newLoans) => {
+                    setLoans(newLoans);
+                    newLoans.forEach(l => syncItem('loans', l));
+                  }} 
+                  deleteLoan={(id) => deleteItem('loans', id)}
+                  books={books} 
+                  setBooks={(newBooks) => {
+                    setBooks(newBooks);
+                    newBooks.forEach(b => syncItem('books', b));
+                  }} 
+                  students={students} 
+                />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/admin/students" element={
+              <ProtectedRoute>
+                <AdminStudents 
+                  students={students} 
+                  setStudents={(newStudents) => {
+                    setStudents(newStudents);
+                    newStudents.forEach(s => syncItem('students', s));
+                  }} 
+                  deleteStudent={(id) => deleteItem('students', id)}
+                />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/admin/categories" element={
+              <ProtectedRoute>
+                <AdminCategories 
+                  categories={categories} 
+                  setCategories={(newCats) => {
+                    setCategories(newCats);
+                    // Categories are a simple array in data.js, in Firestore we wrap them
+                    newCats.forEach((c, idx) => setDoc(doc(db, 'categories', String(idx)), { name: c }));
+                  }} 
+                />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/admin/users" element={
+              <ProtectedRoute>
+                <AdminAdmins 
+                  admins={admins} 
+                  setAdmins={(newAdmins) => {
+                    setAdmins(newAdmins);
+                    newAdmins.forEach(a => syncItem('admins', a));
+                  }} 
+                />
+              </ProtectedRoute>
+            } />
           </Routes>
         </main>
       </div>

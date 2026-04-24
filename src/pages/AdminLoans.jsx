@@ -114,7 +114,7 @@ const SearchableSelect = ({ label, options, value, onChange, placeholder, icon: 
   );
 };
 
-const AdminLoans = ({ loans, setLoans, books, setBooks, students }) => {
+const AdminLoans = ({ loans, setLoans, books, setBooks, students, deleteLoan }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
   const [selectedLoan, setSelectedLoan] = useState(null);
@@ -197,6 +197,7 @@ const AdminLoans = ({ loans, setLoans, books, setBooks, students }) => {
       if (loanToDelete.status === 'active') {
         setBooks(books.map(b => b.id === loanToDelete.bookId ? { ...b, available_count: b.available_count + 1 } : b));
       }
+      if (deleteLoan) deleteLoan(deleteConfirm.id);
       setLoans(loans.filter(l => l.id !== deleteConfirm.id));
       setDeleteConfirm({ isOpen: false, id: null });
     }

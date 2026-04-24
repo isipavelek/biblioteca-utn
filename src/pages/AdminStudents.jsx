@@ -4,7 +4,7 @@ import { Plus, Trash2, Edit, User, Mail, GraduationCap, Upload, Search, X, Downl
 import * as XLSX from 'xlsx';
 import ConfirmDialog from '../components/ConfirmDialog';
 
-const AdminStudents = ({ students, setStudents }) => {
+const AdminStudents = ({ students, setStudents, deleteStudent }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -77,6 +77,7 @@ const AdminStudents = ({ students, setStudents }) => {
 
   const confirmDelete = () => {
     if (deleteConfirm.id) {
+      if (deleteStudent) deleteStudent(deleteConfirm.id);
       setStudents(students.filter(s => s.id !== deleteConfirm.id));
       setDeleteConfirm({ isOpen: false, id: null });
     }
