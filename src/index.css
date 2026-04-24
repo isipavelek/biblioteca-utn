@@ -125,3 +125,7 @@ button {
 .animate-fade-in {
   animation: fadeIn 0.5s ease forwards;
 }
+
+.hover-card-row:hover {
+  background: rgba(255, 255, 255, 0.03) !important;
+}

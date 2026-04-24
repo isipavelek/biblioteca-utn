@@ -208,84 +208,93 @@ const AdminStudents = ({ students, setStudents, deleteStudent }) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredStudents.map(student => (
-          <div key={student.id} className="glass-card p-6 hover-card" style={{ padding: '1.5rem', position: 'relative' }}>
-            <div className="flex justify-between items-start mb-4">
-              <div style={{ 
-                background: 
-                  student.type === 'Profesor/a' ? 'rgba(139, 92, 246, 0.1)' : 
-                  student.type === 'Preceptor/a' ? 'rgba(99, 102, 241, 0.1)' :
-                  student.type === 'Staff' ? 'rgba(74, 222, 128, 0.1)' :
-                  'rgba(236, 72, 153, 0.1)', 
-                padding: '0.75rem', 
-                borderRadius: '1rem', 
-                color: 
-                  student.type === 'Profesor/a' ? 'var(--accent)' : 
-                  student.type === 'Preceptor/a' ? 'var(--primary)' :
-                  student.type === 'Staff' ? '#4ade80' :
-                  'var(--secondary)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}>
-                {student.type === 'Profesor/a' ? <UserCheck size={20} /> : 
-                 student.type === 'Preceptor/a' ? <Shield size={20} /> :
-                 student.type === 'Staff' ? <Users size={20} /> :
-                 <User size={20} />}
-                <span className="text-xs font-bold uppercase">{student.type}</span>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => handleOpenModal(student)} className="text-muted" style={{ background: 'rgba(255,255,255,0.05)', padding: '0.5rem', borderRadius: '0.5rem' }}>
-                  <Edit size={16} />
-                </button>
-                <button onClick={() => handleDelete(student.id)} className="text-muted" style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '0.5rem', borderRadius: '0.5rem', color: '#f87171' }}>
-                  <Trash2 size={16} />
-                </button>
-              </div>
+      <div className="glass-card overflow-hidden" style={{ padding: 0 }}>
+        <div className="overflow-x-auto">
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.02)' }}>
+                <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Usuario</th>
+                <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Curso/Rol</th>
+                <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Documento</th>
+                <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Contacto</th>
+                <th style={{ padding: '1rem 1.5rem', textAlign: 'right', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredStudents.map(student => (
+                <tr key={student.id} className="hover-card-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', transition: 'background 0.2s' }}>
+                  <td style={{ padding: '1rem 1.5rem' }}>
+                    <div className="flex items-center gap-3">
+                      <div style={{ 
+                        background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
+                        width: '32px', height: '32px', borderRadius: '50%',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '0.75rem', fontWeight: 'bold'
+                      }}>
+                        {(student.lastName || student.name || '?')[0].toUpperCase()}
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: '600' }}>
+                          {student.lastName ? `${student.lastName}, ${student.firstName}` : (student.name || 'Sin Nombre')}
+                        </div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>L: {student.legajo || '---'}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style={{ padding: '1rem 1.5rem' }}>
+                    <div className="flex flex-col gap-1">
+                      <div style={{ fontSize: '0.875rem' }}>{student.grade}</div>
+                      <div style={{ 
+                        fontSize: '0.65rem', 
+                        fontWeight: '700', 
+                        textTransform: 'uppercase',
+                        color: 
+                          student.type === 'Profesor/a' ? 'var(--accent)' : 
+                          student.type === 'Preceptor/a' ? 'var(--primary)' :
+                          student.type === 'Staff' ? '#4ade80' :
+                          'var(--secondary)'
+                      }}>
+                        {student.type || 'Alumno/a'}
+                      </div>
+                    </div>
+                  </td>
+                  <td style={{ padding: '1rem 1.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                    {student.dniType}: {student.dni || '---'}
+                  </td>
+                  <td style={{ padding: '1rem 1.5rem' }}>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2" style={{ fontSize: '0.8rem' }}>
+                        <Mail size={12} className="text-muted" />
+                        <span>{student.instEmail || student.email || '---'}</span>
+                      </div>
+                      <div className="flex items-center gap-2" style={{ fontSize: '0.8rem' }}>
+                        <Phone size={12} className="text-muted" />
+                        <span>{student.cellphone || student.phone || '---'}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
+                    <div className="flex gap-2 justify-end">
+                      <button onClick={() => handleOpenModal(student)} className="text-muted p-2" style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}>
+                        <Edit size={16} />
+                      </button>
+                      <button onClick={() => handleDelete(student.id)} className="p-2" style={{ background: 'rgba(239, 68, 68, 0.05)', color: '#f87171', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}>
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          
+          {filteredStudents.length === 0 && (
+            <div className="py-20 text-center">
+              <Users size={48} className="mx-auto mb-4 text-muted opacity-20" />
+              <p className="text-xl text-muted">No se encontraron usuarios</p>
             </div>
-
-            <h3 style={{ fontSize: '1.25rem', marginBottom: '0.25rem', fontWeight: '600' }}>
-              {student.lastName ? `${student.lastName}, ${student.firstName}` : (student.name || 'Sin Nombre')}
-            </h3>
-            <div className="text-xs text-muted mb-4 flex items-center gap-2">
-              <GraduationCap size={14} /> {student.grade}
-            </div>
-            
-            <div className="grid grid-cols-2 gap-y-3 gap-x-2 mb-4 border-t border-glass pt-4">
-              <div className="flex items-center gap-2 text-xs text-muted">
-                <Hash size={14} /> <span>L: {student.legajo || '---'}</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-muted">
-                <FileText size={14} /> <span>{student.dniType}: {student.dni || '---'}</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-muted">
-                <Calendar size={14} /> <span>{student.birthDate || '---'}</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-muted">
-                <Users size={14} /> <span>Sexo: {student.sex || '-'}</span>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '0.75rem' }}>
-              <div className="flex items-center gap-2 text-sm text-muted">
-                <Mail size={14} />
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{student.instEmail || student.email || 'Sin correo'}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-muted">
-                <Phone size={14} />
-                <span>{student.cellphone || student.phone || 'Sin teléfono'}</span>
-              </div>
-            </div>
-          </div>
-        ))}
-        {filteredStudents.length === 0 && (
-          <div className="col-span-full py-20 text-center glass-card">
-            <Users size={48} className="mx-auto mb-4 text-muted opacity-20" />
-            <p className="text-xl text-muted">No se encontraron usuarios en la base de datos</p>
-            <p className="text-sm text-muted mt-2">Prueba importando un archivo Excel o agregando uno manualmente</p>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {isModalOpen && createPortal(
