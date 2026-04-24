@@ -260,10 +260,12 @@ const AdminInventory = ({ books, setBooks, categories, deleteItem }) => {
                     </div>
                   </div>
                 </td>
-                <td style={{ padding: '1rem 1.5rem' }}>
-                  <div className="flex flex-col gap-2">
-                    <div style={{ fontSize: '0.85rem', fontWeight: '600', color: 'white' }}>{item.editorial || '---'}</div>
-                    <div className="flex flex-wrap gap-2 items-center">
+                <td style={{ padding: '1rem 1.5rem', minWidth: '200px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ fontSize: '0.85rem', fontWeight: '600', color: 'white', lineHeight: '1.4', display: 'block', marginBottom: '4px' }}>
+                      {item.editorial || '---'}
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
                       <span style={{ 
                         fontSize: '9px', 
                         fontWeight: '800', 
@@ -273,11 +275,13 @@ const AdminInventory = ({ books, setBooks, categories, deleteItem }) => {
                         color: item.type === 'equipment' ? '#f472b6' : '#818cf8',
                         padding: '2px 8px',
                         borderRadius: '4px',
-                        border: `1px solid ${item.type === 'equipment' ? 'rgba(236, 72, 153, 0.2)' : 'rgba(99, 102, 241, 0.2)'}`
+                        border: `1px solid ${item.type === 'equipment' ? 'rgba(236, 72, 153, 0.2)' : 'rgba(99, 102, 241, 0.2)'}`,
+                        display: 'inline-block',
+                        whiteSpace: 'nowrap'
                       }}>
                         {item.category || 'General'}
                       </span>
-                      <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase' }}>
+                      <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
                         {item.institutionalType}
                       </span>
                     </div>
