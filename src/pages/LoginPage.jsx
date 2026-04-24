@@ -13,6 +13,13 @@ const LoginPage = ({ admins, setCurrentUser }) => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Redirect if already logged in
+  useEffect(() => {
+    if (auth.currentUser) {
+      navigate('/admin');
+    }
+  }, [navigate]);
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);

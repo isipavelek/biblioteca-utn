@@ -226,7 +226,7 @@ function App() {
   );
 
   return (
-    <Router>
+    <Router basename="/biblioteca-utn/">
       <div className="min-h-screen">
         <Navbar currentUser={currentUser} onLogout={handleLogout} />
         <main className="container mx-auto p-4 pt-24">
