@@ -2,6 +2,8 @@ import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Plus, Trash2, Edit, User, Mail, GraduationCap, Upload, Search, X, Download, Phone, FileText, Hash, FileSpreadsheet, Users, UserCheck, Calendar, Shield } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { db } from '../firebase';
+import { doc, writeBatch } from 'firebase/firestore';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 const AdminStudents = ({ students, setStudents, deleteStudent }) => {
@@ -29,6 +31,46 @@ const AdminStudents = ({ students, setStudents, deleteStudent }) => {
   });
 
   const courses = ["1°A", "1°B", "1°C", "2°A", "2°B", "2°C", "3°A", "3°B", "3°C", "4°A", "4°B", "4°C", "5°A", "5°B", "5°C", "6°A", "6°B", "6°C"];
+
+  const handleCleanDuplicates = async () => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar los perfiles duplicados? (Se conservará un solo registro por persona basado en DNI o Nombre)')) return;
+
+    const seen = new Set();
+    const toDelete = [];
+    const duplicates = [];
+
+    students.forEach(s => {
+      // Create a unique key based on DNI or Name+Lastname
+      const key = s.dni ? `dni:${s.dni}` : `name:${(s.firstName || '').toLowerCase()}-${(s.lastName || '').toLowerCase()}-${s.grade}`;
+      
+      if (seen.has(key)) {
+        toDelete.push(s.id);
+        duplicates.push(`${s.lastName || s.name}, ${s.firstName || ''}`);
+      } else {
+        seen.add(key);
+      }
+    });
+
+    if (toDelete.length === 0) {
+      alert('No se encontraron perfiles duplicados.');
+      return;
+    }
+
+    try {
+      const batch = writeBatch(db);
+      toDelete.forEach(id => {
+        batch.delete(doc(db, 'students', String(id)));
+      });
+      await batch.commit();
+      
+      // Update local state
+      setStudents(students.filter(s => !toDelete.includes(s.id)));
+      alert(`Se eliminaron ${toDelete.length} perfiles duplicados exitosamente.`);
+    } catch (err) {
+      console.error('Error cleaning duplicates:', err);
+      alert('Hubo un error al intentar eliminar los duplicados.');
+    }
+  };
 
   const handleOpenModal = (student = null) => {
     if (student) {
@@ -180,6 +222,9 @@ const AdminStudents = ({ students, setStudents, deleteStudent }) => {
           <p className="text-muted text-sm mt-2">Personal y Alumnado de la institución</p>
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
+          <button onClick={handleCleanDuplicates} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', borderRadius: '0.75rem', background: 'rgba(239, 68, 68, 0.1)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+            <Trash2 size={20} /> Limpiar Duplicados
+          </button>
           <button className="btn-primary" onClick={() => handleOpenModal()} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Plus size={20} /> Nuevo Usuario
           </button>
