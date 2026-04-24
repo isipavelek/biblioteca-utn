@@ -261,27 +261,39 @@ const AdminInventory = ({ books, setBooks, categories, deleteItem }) => {
                   </div>
                 </td>
                 <td style={{ padding: '1rem 1.5rem' }}>
-                  <div className="flex flex-col gap-1">
-                    <div style={{ fontSize: '0.85rem', fontWeight: '600' }}>{item.editorial || '---'}</div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: item.type === 'equipment' ? '#ec4899' : '#6366f1', background: item.type === 'equipment' ? 'rgba(236, 72, 153, 0.1)' : 'rgba(99, 102, 241, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>
+                  <div className="flex flex-col gap-2">
+                    <div style={{ fontSize: '0.85rem', fontWeight: '600', color: 'white' }}>{item.editorial || '---'}</div>
+                    <div className="flex flex-wrap gap-2 items-center">
+                      <span style={{ 
+                        fontSize: '9px', 
+                        fontWeight: '800', 
+                        textTransform: 'uppercase', 
+                        letterSpacing: '0.05em',
+                        background: item.type === 'equipment' ? 'rgba(236, 72, 153, 0.15)' : 'rgba(99, 102, 241, 0.15)',
+                        color: item.type === 'equipment' ? '#f472b6' : '#818cf8',
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        border: `1px solid ${item.type === 'equipment' ? 'rgba(236, 72, 153, 0.2)' : 'rgba(99, 102, 241, 0.2)'}`
+                      }}>
                         {item.category || 'General'}
                       </span>
-                      <span className="text-[10px] font-bold uppercase text-muted tracking-wider">{item.institutionalType}</span>
+                      <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: '700', textTransform: 'uppercase' }}>
+                        {item.institutionalType}
+                      </span>
                     </div>
                   </div>
                 </td>
                 <td style={{ padding: '1rem 1.5rem' }}>
                   <div className="flex flex-col gap-1" style={{ minWidth: '100px' }}>
-                    <div className="flex justify-between items-end">
-                      <span style={{ fontSize: '0.9rem', fontWeight: '700' }}>{item.available_count}</span>
-                      <span className="text-[10px] text-muted">de {item.total_count}</span>
+                    <div className="flex items-baseline gap-1 mb-1">
+                      <span style={{ fontSize: '1rem', fontWeight: '800', color: 'white' }}>{item.available_count}</span>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: '600' }}>/ {item.total_count}</span>
                     </div>
-                    <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden' }}>
+                    <div style={{ width: '100%', height: '5px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden' }}>
                       <motion.div 
                         initial={{ width: 0 }}
                         animate={{ width: `${(item.available_count / item.total_count) * 100}%` }}
-                        style={{ height: '100%', background: item.available_count === 0 ? '#f87171' : 'linear-gradient(90deg, var(--primary), var(--accent))' }}
+                        style={{ height: '100%', background: item.available_count === 0 ? '#f87171' : 'linear-gradient(90deg, #6366f1, #a855f7)' }}
                       />
                     </div>
                   </div>
