@@ -50,7 +50,25 @@ const Navbar = ({ currentUser, onLogout }) => {
             <NavLink to="/admin/students" icon={<Users size={18} />} label="Usuarios" active={location.pathname === '/admin/students'} />
             <NavLink to="/admin/categories" icon={<Tags size={18} />} label="Categorías" active={location.pathname === '/admin/categories'} />
             <NavLink to="/admin/users" icon={<Shield size={18} />} label="Admins" active={location.pathname === '/admin/users'} />
-            <button onClick={onLogout} className="text-muted" style={{ background: 'none', fontSize: '0.875rem', marginLeft: '0.5rem' }}>Salir</button>
+            <button 
+              onClick={onLogout} 
+              style={{ 
+                background: 'rgba(239, 68, 68, 0.1)', 
+                color: '#f87171', 
+                border: 'none', 
+                padding: '0.4rem 0.8rem', 
+                borderRadius: '0.6rem', 
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                marginLeft: '0.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.4rem'
+              }}
+            >
+              Salir
+            </button>
           </>
         )}
       </div>

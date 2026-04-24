@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { initialBooks, initialStudents, initialLoans, initialCategories, initialAdmins } from './data';
 import { db, auth } from './firebase';
 import { collection, getDocs, setDoc, doc, writeBatch } from 'firebase/firestore';
@@ -105,46 +105,16 @@ function App() {
     fetchData();
   }, [currentUser]); // Re-fetch when user logs in/out
 
-  // Sync state to Firebase on changes
-  // Note: For production, it's better to write to Firestore in the handlers (AdminInventory, etc.)
   const handleLogout = async () => {
     await signOut(auth);
   };
 
   const ProtectedRoute = ({ children }) => {
-    if (loading) return null; // Loading is handled at the app level
+    if (loading) return null; 
     if (!currentUser) return <Navigate to="/login" />;
     return children;
   };
 
-  // We wrap the setters to include Firestore persistence
-  const wrapSetState = (collectionName, setter) => (newDataOrFunc) => {
-    setter(prev => {
-      const next = typeof newDataOrFunc === 'function' ? newDataOrFunc(prev) : newDataOrFunc;
-      
-      // Persistence logic
-      const persist = async () => {
-        try {
-          // If it's a deletion, we need to handle it differently, but for now:
-          // We sync the entire collection state (simple but not optimal for thousands of records)
-          // For now, let's just do individual doc updates where possible or batch
-          
-          // Strategy: Find the difference? No, let's just update Firestore
-          // Since the user is using small-ish datasets, we can do this.
-          // Better: Only sync the specific item changed.
-        } catch (e) { console.error(e); }
-      };
-
-      // Since we want to stay compatible with existing code, we'll implement 
-      // a more targeted sync in the next step.
-      return next;
-    });
-  };
-
-  // We'll update the components to use these new persistent setters
-  // But wait, the simplest way is to use the global useEffect but with individual document writes.
-  
-  // Let's implement a more efficient sync in the Admin components or here
   const syncItem = async (col, item) => {
     await setDoc(doc(db, col, String(item.id)), item);
   };
@@ -226,7 +196,7 @@ function App() {
   );
 
   return (
-    <Router basename="/biblioteca-utn/">
+    <Router>
       <div className="min-h-screen">
         <Navbar currentUser={currentUser} onLogout={handleLogout} />
         <main className="container mx-auto p-4 pt-24">
@@ -288,7 +258,6 @@ function App() {
                   categories={categories} 
                   setCategories={(newCats) => {
                     setCategories(newCats);
-                    // Categories are a simple array in data.js, in Firestore we wrap them
                     newCats.forEach((c) => setDoc(doc(db, 'categories', String(c)), { name: c }));
                   }} 
                 />
