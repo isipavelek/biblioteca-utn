@@ -155,7 +155,31 @@ function App() {
     } catch (e) { console.error(e); }
   };
 
-  if (loading) return <div className="flex items-center justify-center min-h-screen text-white bg-dark">Cargando base de datos...</div>;
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-dark text-white p-4" style={{
+      background: 'radial-gradient(circle at center, #1e293b 0%, #0f172a 100%)'
+    }}>
+      <div className="relative mb-8">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary"></div>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="h-10 w-10 rounded-full bg-primary/10 animate-pulse"></div>
+        </div>
+      </div>
+      <div className="text-center animate-fade-in">
+        <h2 className="text-2xl font-bold mb-2" style={{ 
+          background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent'
+        }}>
+          BiblioUTN
+        </h2>
+        <p className="text-muted text-sm flex items-center gap-2 justify-center">
+          <span className="inline-block w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+          Sincronizando con la nube...
+        </p>
+      </div>
+    </div>
+  );
 
   return (
     <Router>
