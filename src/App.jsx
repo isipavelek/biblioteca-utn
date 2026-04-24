@@ -113,7 +113,7 @@ function App() {
 
   const ProtectedRoute = ({ children }) => {
     if (loading) return null; // Loading is handled at the app level
-    if (!currentUser) return <Navigate to="/" />;
+    if (!currentUser) return <Navigate to="/login" />;
     return children;
   };
 
