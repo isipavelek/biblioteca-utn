@@ -1,33 +1,45 @@
 import React, { useState } from 'react';
-import { Book, Users, ClipboardList, TrendingUp, CheckCircle, XCircle, Award, Filter } from 'lucide-react';
+import { Book, Users, ClipboardList, TrendingUp, CheckCircle, XCircle, Award, Filter, Monitor, AlertTriangle, Clock } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 
 const AdminDashboard = ({ books, students, loans }) => {
   const [courseFilter, setCourseFilter] = useState('all');
 
-  const totalBooks = books.reduce((acc, book) => acc + book.total_count, 0);
-  const availableBooks = books.reduce((acc, book) => acc + book.available_count, 0);
-  const loanedBooks = totalBooks - availableBooks;
+  const totalItems = books.reduce((acc, book) => acc + (book.total_count || 0), 0);
+  const availableItems = books.reduce((acc, book) => acc + (book.available_count || 0), 0);
+  const loanedItems = totalItems - availableItems;
+  
+  // Equipment vs Books
+  const equipmentCount = books.filter(b => b.category === 'Equipamiento' || b.category === 'Tecnología').reduce((acc, b) => acc + b.total_count, 0);
+  const literatureCount = totalItems - equipmentCount;
 
-  const courses = ["1°A", "1°B", "1°C", "2°A", "2°B", "2°C"];
+  // Overdue Loans
+  const today = new Date();
+  const overdueLoans = loans.filter(l => {
+    if (l.status !== 'active') return false;
+    const dueDate = new Date(l.dueDate);
+    return dueDate < today;
+  });
+
+  const courses = [...new Set(students.map(s => s.grade).filter(Boolean))].sort();
 
   const pieData = [
-    { name: 'Disponibles', value: availableBooks, color: '#4ade80' },
-    { name: 'Prestados', value: loanedBooks, color: '#f87171' }
+    { name: 'Disponibles', value: availableItems, color: '#4ade80' },
+    { name: 'Prestados', value: loanedItems, color: '#f87171' }
   ];
 
   const categoryData = books.reduce((acc, book) => {
-    const existing = acc.find(item => item.name === book.category);
+    const catName = book.category || 'Sin Categoría';
+    const existing = acc.find(item => item.name === catName);
     if (existing) {
-      existing.total += book.total_count;
-      existing.available += book.available_count;
+      existing.total += (book.total_count || 0);
+      existing.available += (book.available_count || 0);
     } else {
-      acc.push({ name: book.category, total: book.total_count, available: book.available_count });
+      acc.push({ name: catName, total: (book.total_count || 0), available: (book.available_count || 0) });
     }
     return acc;
   }, []);
 
-  // Calculate ranking
   const getMostBorrowed = () => {
     let filteredLoans = loans;
     if (courseFilter !== 'all') {
@@ -44,9 +56,9 @@ const AdminDashboard = ({ books, students, loans }) => {
 
     return Object.entries(counts)
       .map(([bookId, count]) => ({
-        id: parseInt(bookId),
+        id: bookId,
         count,
-        title: books.find(b => b.id === parseInt(bookId))?.title || 'Desconocido'
+        title: books.find(b => String(b.id) === String(bookId))?.title || 'Desconocido'
       }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
@@ -57,7 +69,10 @@ const AdminDashboard = ({ books, students, loans }) => {
   return (
     <div className="animate-fade-in">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl">Panel de Control</h1>
+        <div>
+          <h1 className="text-3xl">Panel de Control</h1>
+          <p className="text-muted text-sm mt-1">Resumen general de la biblioteca y equipamiento</p>
+        </div>
         <div className="flex items-center gap-4 glass-card px-4 py-2" style={{ padding: '0.5rem 1rem' }}>
           <Filter size={18} className="text-muted" />
           <span className="text-sm text-muted">Filtrar Ranking:</span>
@@ -76,108 +91,140 @@ const AdminDashboard = ({ books, students, loans }) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard icon={<Book size={20} color="#6366f1" />} label="Total" value={totalBooks} color="var(--primary)" />
-        <StatCard icon={<Users size={20} color="#ec4899" />} label="Usuarios" value={students.length} color="var(--secondary)" />
-        <StatCard icon={<ClipboardList size={20} color="#8b5cf6" />} label="Activos" value={loans.filter(l => l.status === 'active').length} color="var(--accent)" />
-        <StatCard icon={<TrendingUp size={20} color="#4ade80" />} label="Disponibilidad" value={`${totalBooks > 0 ? Math.round((availableBooks/totalBooks)*100) : 0}%`} color="#4ade80" />
+        <StatCard icon={<Book size={20} />} label="Libros" value={literatureCount} color="#6366f1" />
+        <StatCard icon={<Monitor size={20} />} label="Equipos" value={equipmentCount} color="#ec4899" />
+        <StatCard icon={<AlertTriangle size={20} />} label="Vencidos" value={overdueLoans.length} color="#f87171" highlight={overdueLoans.length > 0} />
+        <StatCard icon={<TrendingUp size={20} />} label="Uso" value={`${totalItems > 0 ? Math.round((loanedItems/totalItems)*100) : 0}%`} color="#4ade80" />
       </div>
+
+      {overdueLoans.length > 0 && (
+        <div className="glass-card mb-6 p-4 border-l-4" style={{ borderColor: '#f87171', background: 'rgba(248, 113, 113, 0.05)' }}>
+          <div className="flex items-center gap-3 mb-3">
+            <Clock className="text-red-400" size={20} style={{ color: '#f87171' }} />
+            <h3 className="text-sm font-bold uppercase tracking-wider" style={{ color: '#f87171' }}>Alertas Críticas: Préstamos Vencidos</h3>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {overdueLoans.slice(0, 3).map(loan => {
+              const student = students.find(s => s.id === loan.studentId);
+              const book = books.find(b => b.id === loan.bookId);
+              return (
+                <div key={loan.id} className="glass-card px-3 py-2 text-xs flex items-center gap-2" style={{ background: 'rgba(255,255,255,0.03)' }}>
+                  <span style={{ fontWeight: '700' }}>{student?.lastName || 'Usuario'}:</span>
+                  <span className="text-muted">{book?.title || 'Libro'}</span>
+                  <span style={{ color: '#f87171', marginLeft: '4px' }}>{new Date(loan.dueDate).toLocaleDateString()}</span>
+                </div>
+              );
+            })}
+            {overdueLoans.length > 3 && <div className="text-xs text-muted self-center">y {overdueLoans.length - 3} más...</div>}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
-        {/* Inventory Status - Compact */}
-        <div className="glass-card p-4 lg:col-span-4" style={{ height: '350px' }}>
-          <h3 className="text-sm mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Estado Inventario</h3>
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={pieData}
-                cx="50%"
-                cy="45%"
-                innerRadius={50}
-                outerRadius={80}
-                paddingAngle={5}
-                dataKey="value"
-              >
-                {pieData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip 
-                contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-glass)', borderRadius: '0.75rem' }}
-                itemStyle={{ color: 'white' }}
-              />
-              <Legend verticalAlign="bottom" />
-            </PieChart>
-          </ResponsiveContainer>
+        <div className="glass-card p-5 lg:col-span-4" style={{ minHeight: '350px' }}>
+          <h3 className="text-xs mb-6 font-bold uppercase text-muted tracking-widest">Disponibilidad</h3>
+          <div style={{ height: '220px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={pieData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={90}
+                  paddingAngle={8}
+                  dataKey="value"
+                >
+                  {pieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ background: '#1e293b', border: 'none', borderRadius: '0.75rem', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.3)' }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex justify-around mt-4">
+            {pieData.map(d => (
+              <div key={d.name} className="text-center">
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: d.color, margin: '0 auto 4px' }}></div>
+                <div className="text-xs font-bold">{d.value}</div>
+                <div className="text-[10px] text-muted uppercase">{d.name}</div>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Categories Bar Chart - More Space */}
-        <div className="glass-card p-4 lg:col-span-8" style={{ height: '350px' }}>
-          <h3 className="text-sm mb-4" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Libros por Categoría</h3>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={categoryData}>
-              <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} />
-              <YAxis stroke="#94a3b8" fontSize={10} />
-              <Tooltip 
-                cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-glass)', borderRadius: '0.75rem' }}
-                itemStyle={{ color: 'white' }}
-              />
-              <Bar dataKey="total" name="Total" fill="var(--primary)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="available" name="Disponibles" fill="#4ade80" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+        <div className="glass-card p-5 lg:col-span-8" style={{ minHeight: '350px' }}>
+          <h3 className="text-xs mb-6 font-bold uppercase text-muted tracking-widest">Distribución por Categoría</h3>
+          <div style={{ height: '250px' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={categoryData}>
+                <XAxis dataKey="name" stroke="#64748b" fontSize={10} axisLine={false} tickLine={false} />
+                <YAxis stroke="#64748b" fontSize={10} axisLine={false} tickLine={false} />
+                <Tooltip 
+                  cursor={{ fill: 'rgba(255,255,255,0.02)' }}
+                  contentStyle={{ background: '#1e293b', border: 'none', borderRadius: '0.75rem' }}
+                />
+                <Bar dataKey="total" name="Total" fill="rgba(99, 102, 241, 0.8)" radius={[4, 4, 0, 0]} barSize={20} />
+                <Bar dataKey="available" name="Disponibles" fill="rgba(74, 222, 128, 0.8)" radius={[4, 4, 0, 0]} barSize={20} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
-      <div className="glass-card p-4">
-        <div className="flex items-center gap-4 mb-4">
-          <Award size={20} className="text-secondary" color="var(--secondary)" />
-          <h3 className="text-sm" style={{ color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Ranking de Más Prestados {courseFilter !== 'all' ? `en ${courseFilter}` : 'General'}</h3>
+      <div className="glass-card p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <Award size={22} className="text-secondary" style={{ color: 'var(--secondary)' }} />
+          <h3 className="text-xs font-bold uppercase text-muted tracking-widest">Ranking de Más Solicitados {courseFilter !== 'all' ? `en ${courseFilter}` : 'General'}</h3>
         </div>
         
         {rankingData.length > 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+            <div className="flex flex-col gap-3">
               {rankingData.map((item, index) => (
-                <div key={item.id} className="flex items-center gap-4" style={{ background: 'rgba(255,255,255,0.02)', padding: '0.75rem 1rem', borderRadius: '0.75rem' }}>
+                <div key={item.id} className="flex items-center gap-4 group" style={{ background: 'rgba(255,255,255,0.02)', padding: '0.75rem 1.25rem', borderRadius: '1rem', border: '1px solid transparent', transition: 'all 0.3s' }}>
                   <div style={{ 
-                    width: '24px', 
-                    height: '24px', 
-                    background: index === 0 ? 'gold' : index === 1 ? '#C0C0C0' : index === 2 ? '#CD7F32' : 'rgba(255,255,255,0.1)',
-                    color: index < 3 ? 'black' : 'white',
-                    borderRadius: '50%',
+                    width: '32px', 
+                    height: '32px', 
+                    background: index === 0 ? 'linear-gradient(135deg, #fbbf24, #d97706)' : index === 1 ? 'linear-gradient(135deg, #94a3b8, #475569)' : index === 2 ? 'linear-gradient(135deg, #a8a29e, #78716c)' : 'rgba(255,255,255,0.05)',
+                    color: index < 3 ? 'white' : 'var(--text-muted)',
+                    borderRadius: '0.75rem',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontWeight: '700',
-                    fontSize: '0.75rem'
+                    fontWeight: '800',
+                    fontSize: '0.875rem'
                   }}>
                     {index + 1}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{item.title}</div>
-                    <div className="text-xs text-muted">{item.count} préstamos</div>
+                    <div style={{ fontWeight: '600', fontSize: '0.95rem' }}>{item.title}</div>
+                    <div className="text-xs text-muted">{item.count} préstamos registrados</div>
                   </div>
                 </div>
               ))}
             </div>
-            <div style={{ height: '200px' }}>
+            <div style={{ height: '240px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart layout="vertical" data={rankingData} margin={{ left: 10, right: 30 }}>
                   <XAxis type="number" hide />
                   <YAxis type="category" dataKey="title" hide />
                   <Tooltip 
-                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                    contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-glass)', borderRadius: '0.75rem' }}
+                    cursor={{ fill: 'rgba(255,255,255,0.02)' }}
+                    contentStyle={{ background: '#1e293b', border: 'none', borderRadius: '0.75rem' }}
                   />
-                  <Bar dataKey="count" fill="var(--secondary)" radius={[0, 4, 4, 0]} barSize={12} />
+                  <Bar dataKey="count" fill="var(--secondary)" radius={[0, 6, 6, 0]} barSize={16} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
         ) : (
-          <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-            Sin datos de préstamos.
+          <div className="py-12 text-center text-muted">
+            <ClipboardList size={40} className="mx-auto mb-3 opacity-20" />
+            <p>No hay datos suficientes para generar un ranking en este curso.</p>
           </div>
         )}
       </div>
@@ -185,14 +232,19 @@ const AdminDashboard = ({ books, students, loans }) => {
   );
 };
 
-const StatCard = ({ icon, label, value, color }) => (
-  <div className="glass-card p-3" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-    <div style={{ background: `${color}15`, padding: '0.75rem', borderRadius: '0.75rem', display: 'flex' }}>
+const StatCard = ({ icon, label, value, color, highlight }) => (
+  <div className="glass-card p-4 transition-all hover:scale-[1.02]" style={{ 
+    display: 'flex', 
+    alignItems: 'center', 
+    gap: '1.25rem',
+    borderLeft: highlight ? `4px solid ${color}` : '1px solid rgba(255,255,255,0.1)'
+  }}>
+    <div style={{ background: `${color}15`, color: color, padding: '0.875rem', borderRadius: '1rem', display: 'flex' }}>
       {icon}
     </div>
     <div style={{ overflow: 'hidden' }}>
-      <p className="text-xs text-muted" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</p>
-      <h2 style={{ fontSize: '1.25rem', fontWeight: '700', lineHeight: '1.2' }}>{value}</h2>
+      <p className="text-xs font-bold uppercase tracking-widest text-muted mb-1">{label}</p>
+      <h2 style={{ fontSize: '1.5rem', fontWeight: '800', color: highlight ? color : 'white' }}>{value}</h2>
     </div>
   </div>
 );
