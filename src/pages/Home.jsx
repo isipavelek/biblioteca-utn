@@ -36,7 +36,7 @@ const Home = ({ books, categories }) => {
 
         <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
           <CategoryBtn active={selectedCategory === 'All'} onClick={() => setSelectedCategory('All')} label="Todos" />
-          {categories.map(cat => (
+          {[...new Set(categories)].map(cat => (
             <CategoryBtn key={cat} active={selectedCategory === cat} onClick={() => setSelectedCategory(cat)} label={cat} />
           ))}
         </div>

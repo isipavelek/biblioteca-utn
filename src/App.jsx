@@ -67,8 +67,9 @@ function App() {
             if (dataToMigrate && dataToMigrate.length > 0) {
               console.log(`Migrating ${key} to Firebase...`);
               const batch = writeBatch(db);
-              dataToMigrate.forEach(item => {
-                const id = String(item.id || Date.now() + Math.random());
+              dataToMigrate.forEach((item, idx) => {
+                // Use a stable ID for categories if they are strings, or use their provided ID
+                const id = typeof item === 'string' ? item : String(item.id || idx);
                 const itemRef = doc(db, key, id);
                 
                 // Firestore REQUIRES objects. If item is a string (common in categories), wrap it.
@@ -288,7 +289,7 @@ function App() {
                   setCategories={(newCats) => {
                     setCategories(newCats);
                     // Categories are a simple array in data.js, in Firestore we wrap them
-                    newCats.forEach((c, idx) => setDoc(doc(db, 'categories', String(idx)), { name: c }));
+                    newCats.forEach((c) => setDoc(doc(db, 'categories', String(c)), { name: c }));
                   }} 
                 />
               </ProtectedRoute>
