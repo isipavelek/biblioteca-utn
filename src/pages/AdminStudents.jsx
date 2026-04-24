@@ -245,7 +245,9 @@ const AdminStudents = ({ students, setStudents, deleteStudent }) => {
               </div>
             </div>
 
-            <h3 style={{ fontSize: '1.25rem', marginBottom: '0.25rem', fontWeight: '600' }}>{student.lastName}, {student.firstName}</h3>
+            <h3 style={{ fontSize: '1.25rem', marginBottom: '0.25rem', fontWeight: '600' }}>
+              {student.lastName ? `${student.lastName}, ${student.firstName}` : (student.name || 'Sin Nombre')}
+            </h3>
             <div className="text-xs text-muted mb-4 flex items-center gap-2">
               <GraduationCap size={14} /> {student.grade}
             </div>

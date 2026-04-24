@@ -218,8 +218,8 @@ const AdminInventory = ({ books, setBooks, categories, deleteItem }) => {
                       </div>
                     </div>
                     <div>
-                      <div style={{ fontWeight: '600' }}>{item.title}</div>
-                      <div className="text-xs text-muted">{item.author}</div>
+                      <div style={{ fontWeight: '600' }}>{item.title || 'Sin Título'}</div>
+                      <div className="text-xs text-muted">{item.author || 'Anónimo'}</div>
                     </div>
                   </div>
                 </td>

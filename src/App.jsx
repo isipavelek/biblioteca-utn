@@ -36,30 +36,41 @@ function App() {
   // Fetch all data from Firebase
   useEffect(() => {
     const fetchData = async () => {
+      console.log("Starting Firebase fetch...");
       try {
         const collections = ['books', 'students', 'loans', 'categories', 'admins'];
         const results = {};
 
         for (const colName of collections) {
           const querySnapshot = await getDocs(collection(db, colName));
-          const data = querySnapshot.docs.map(doc => ({ ...doc.data(), id: isNaN(doc.id) ? doc.id : Number(doc.id) }));
+          const data = querySnapshot.docs.map(doc => {
+            const docData = doc.data();
+            // Ensure ID is consistent
+            return { 
+              ...docData, 
+              id: docData.id || doc.id 
+            };
+          });
+          console.log(`Fetched ${data.length} items from [${colName}]`);
           results[colName] = data;
         }
 
         // Migration Logic: If Firebase is empty but localStorage has data, migrate it
         const checkAndMigrate = async (key, fireData, initialData) => {
-          if (fireData.length === 0) {
+          if (!fireData || fireData.length === 0) {
             const localSaved = localStorage.getItem(`library_${key}`);
             const dataToMigrate = localSaved ? JSON.parse(localSaved) : initialData;
             
-            console.log(`Migrating ${key} to Firebase...`);
-            const batch = writeBatch(db);
-            dataToMigrate.forEach(item => {
-              const itemRef = doc(db, key, String(item.id || Date.now() + Math.random()));
-              batch.set(itemRef, item);
-            });
-            await batch.commit();
-            return dataToMigrate;
+            if (dataToMigrate && dataToMigrate.length > 0) {
+              console.log(`Migrating ${key} to Firebase...`);
+              const batch = writeBatch(db);
+              dataToMigrate.forEach(item => {
+                const itemRef = doc(db, key, String(item.id || Date.now() + Math.random()));
+                batch.set(itemRef, item);
+              });
+              await batch.commit();
+              return dataToMigrate;
+            }
           }
           return fireData;
         };
@@ -67,8 +78,10 @@ function App() {
         const finalBooks = await checkAndMigrate('books', results.books, initialBooks);
         const finalStudents = await checkAndMigrate('students', results.students, initialStudents);
         const finalLoans = await checkAndMigrate('loans', results.loans, initialLoans);
-        const finalCategories = await checkAndMigrate('categories', results.categories.map(c => c.name || c), initialCategories);
+        const finalCategories = await checkAndMigrate('categories', (results.categories || []).map(c => c.name || c), initialCategories);
         const finalAdmins = await checkAndMigrate('admins', results.admins, initialAdmins);
+
+        console.log("Data initialized:", { books: finalBooks.length, students: finalStudents.length });
 
         setBooks(finalBooks);
         setStudents(finalStudents);
@@ -76,7 +89,7 @@ function App() {
         setCategories(finalCategories);
         setAdmins(finalAdmins);
       } catch (error) {
-        console.error("Error fetching from Firebase:", error);
+        console.error("Critical error fetching from Firebase:", error);
       } finally {
         setLoading(false);
       }
