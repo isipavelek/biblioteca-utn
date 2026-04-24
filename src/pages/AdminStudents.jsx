@@ -358,9 +358,8 @@ const AdminStudents = ({ students, setStudents, deleteStudent }) => {
                   <select className="input-field" value={formData.type} onChange={(e) => {
                     const newType = e.target.value;
                     let newGrade = formData.grade;
-                    if (newType === 'Profesor/a') newGrade = 'Cuerpo Docente';
-                    else if (newType === 'Staff' || newType === 'Preceptor/a') newGrade = 'Personal/Staff';
-                    else if (newType === 'Alumno' && (newGrade === 'Cuerpo Docente' || newGrade === 'Personal/Staff')) newGrade = '1°A';
+                    if (newType !== 'Alumno') newGrade = '';
+                    else if (newGrade === '') newGrade = '1°A';
                     
                     setFormData({...formData, type: newType, grade: newGrade});
                   }}>
@@ -372,8 +371,18 @@ const AdminStudents = ({ students, setStudents, deleteStudent }) => {
                 </div>
                 <div>
                   <label className="text-xs text-muted block mb-1">Curso / División</label>
-                  <select className="input-field" value={formData.grade} onChange={(e) => setFormData({...formData, grade: e.target.value})}>
-                    {courses.map(c => <option key={c} value={c}>{c}</option>)}
+                  <select 
+                    className="input-field" 
+                    value={formData.grade} 
+                    onChange={(e) => setFormData({...formData, grade: e.target.value})}
+                    disabled={formData.type !== 'Alumno'}
+                    style={{ opacity: formData.type !== 'Alumno' ? 0.5 : 1, cursor: formData.type !== 'Alumno' ? 'not-allowed' : 'pointer' }}
+                  >
+                    {formData.type === 'Alumno' ? (
+                      courses.filter(c => !["Cuerpo Docente", "Personal/Staff", "N/A"].includes(c)).map(c => <option key={c} value={c}>{c}</option>)
+                    ) : (
+                      <option value="">N/A (Personal Institucional)</option>
+                    )}
                   </select>
                 </div>
                 <div>
