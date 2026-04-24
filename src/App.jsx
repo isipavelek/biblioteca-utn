@@ -156,25 +156,68 @@ function App() {
   };
 
   if (loading) return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-dark text-white p-4" style={{
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: '100vh',
+      backgroundColor: '#0f172a',
+      color: 'white',
+      padding: '1rem',
       background: 'radial-gradient(circle at center, #1e293b 0%, #0f172a 100%)'
     }}>
-      <div className="relative mb-8">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary"></div>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="h-10 w-10 rounded-full bg-primary/10 animate-pulse"></div>
+      <div style={{ position: 'relative', marginBottom: '2rem' }}>
+        <div className="animate-spin" style={{
+          width: '4rem',
+          height: '4rem',
+          borderRadius: '9999px',
+          borderTop: '2px solid var(--primary)',
+          borderBottom: '2px solid var(--primary)',
+          borderLeft: '2px solid transparent',
+          borderRight: '2px solid transparent'
+        }}></div>
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <div className="animate-pulse" style={{
+            height: '2.5rem',
+            width: '2.5rem',
+            borderRadius: '9999px',
+            backgroundColor: 'rgba(var(--primary-rgb), 0.1)'
+          }}></div>
         </div>
       </div>
-      <div className="text-center animate-fade-in">
-        <h2 className="text-2xl font-bold mb-2" style={{ 
+      <div style={{ textAlign: 'center' }} className="animate-fade-in">
+        <h2 style={{ 
+          fontSize: '1.5rem',
+          fontWeight: '700',
+          marginBottom: '0.5rem',
           background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent'
         }}>
           BiblioUTN
         </h2>
-        <p className="text-muted text-sm flex items-center gap-2 justify-center">
-          <span className="inline-block w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+        <p style={{
+          color: 'var(--text-muted)',
+          fontSize: '0.875rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          justifyContent: 'center'
+        }}>
+          <span className="animate-pulse" style={{
+            display: 'inline-block',
+            width: '0.5rem',
+            height: '0.5rem',
+            borderRadius: '9999px',
+            backgroundColor: 'var(--primary)'
+          }}></span>
           Sincronizando con la nube...
         </p>
       </div>
