@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { initialBooks, initialStudents, initialLoans, initialCategories, initialAdmins } from './data';
-import { db } from './firebase';
+import { db, auth } from './firebase';
 import { collection, getDocs, setDoc, doc, writeBatch } from 'firebase/firestore';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 import Home from './pages/Home';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminInventory from './pages/AdminInventory';
@@ -16,16 +17,21 @@ import './App.css';
 
 function App() {
   const [loading, setLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState(() => {
-    const saved = localStorage.getItem('library_current_user');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [currentUser, setCurrentUser] = useState(null);
 
   const [books, setBooks] = useState([]);
   const [students, setStudents] = useState([]);
   const [loans, setLoans] = useState([]);
   const [categories, setCategories] = useState([]);
   const [admins, setAdmins] = useState([]);
+
+  // Auth Observer
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
 
   // Fetch all data from Firebase
   useEffect(() => {
@@ -81,42 +87,8 @@ function App() {
 
   // Sync state to Firebase on changes
   // Note: For production, it's better to write to Firestore in the handlers (AdminInventory, etc.)
-  // but this "auto-sync" pattern works for small-medium apps with this structure.
-  const syncToFirebase = async (collectionName, data) => {
-    if (loading) return;
-    try {
-      // For simplicity in this structure, we overwrite the specific doc on change
-      // In AdminInventory, AdminLoans etc., we should ideally call these functions
-    } catch (e) { console.error(e); }
-  };
-
-  // Improved Update Wrappers to include Firebase sync
-  const updateBooks = async (newBooks) => {
-    setBooks(newBooks);
-    // Find what changed and sync? For now, we'll let the components trigger writes or use a debounced global sync
-  };
-
-  // To maintain compatibility with existing props (setBooks, setStudents, etc.)
-  // we will use the useEffect for global sync but with a check
-  useEffect(() => {
-    if (loading) return;
-    localStorage.setItem('library_current_user', JSON.stringify(currentUser));
-  }, [currentUser, loading]);
-
-  // Global Sync Effect
-  useEffect(() => {
-    if (loading) return;
-    
-    const syncAll = async () => {
-      // This is a "heavy" way to sync but keeps the current architecture working
-      // Ideally, each component should handle its own Firestore doc updates
-    };
-
-    // We'll update the state setters passed to components to be Firestore-aware
-  }, [books, students, loans, categories, admins, loading]);
-
-  const handleLogout = () => {
-    setCurrentUser(null);
+  const handleLogout = async () => {
+    await signOut(auth);
   };
 
   const ProtectedRoute = ({ children }) => {

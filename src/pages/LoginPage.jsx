@@ -1,22 +1,35 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, User, AlertCircle } from 'lucide-react';
+import { Lock, User, AlertCircle, Mail } from 'lucide-react';
 import { motion } from 'framer-motion';
 
+import { auth } from '../firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+
 const LoginPage = ({ admins, setCurrentUser }) => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    const admin = admins.find(a => a.username === username && a.password === password);
-    if (admin) {
-      setCurrentUser(admin);
+    setIsLoading(true);
+    setError('');
+    
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
       navigate('/admin');
-    } else {
-      setError('Credenciales incorrectas');
+    } catch (err) {
+      console.error(err);
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        setError('Email o contraseña incorrectos');
+      } else {
+        setError('Error al iniciar sesión. Intente más tarde.');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -44,15 +57,17 @@ const LoginPage = ({ admins, setCurrentUser }) => {
         <form onSubmit={handleLogin}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div>
-              <label className="text-sm text-muted mb-8" style={{ display: 'block', marginBottom: '0.5rem' }}>Usuario</label>
+              <label className="text-sm text-muted mb-8" style={{ display: 'block', marginBottom: '0.5rem' }}>Correo Electrónico</label>
               <div className="relative">
-                <User size={18} className="absolute" style={{ left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                <Mail size={18} className="absolute" style={{ left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                 <input 
+                  type="email"
                   className="input-field" 
                   style={{ paddingLeft: '3rem' }} 
                   required
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="ejemplo@correo.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
             </div>
@@ -78,8 +93,13 @@ const LoginPage = ({ admins, setCurrentUser }) => {
               </div>
             )}
 
-            <button type="submit" className="btn-primary w-full" style={{ marginTop: '1rem' }}>
-              Iniciar Sesión
+            <button 
+              type="submit" 
+              disabled={isLoading}
+              className="btn-primary w-full" 
+              style={{ marginTop: '1rem', opacity: isLoading ? 0.7 : 1, cursor: isLoading ? 'wait' : 'pointer' }}
+            >
+              {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
             </button>
           </div>
         </form>
