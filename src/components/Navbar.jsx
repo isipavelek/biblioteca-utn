@@ -1,0 +1,72 @@
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { Library, LayoutDashboard, BookOpen, Users, Tags, ClipboardList, Shield } from 'lucide-react';
+
+const Navbar = ({ currentUser, onLogout }) => {
+  const location = useLocation();
+  const isAdmin = location.pathname.startsWith('/admin');
+
+  return (
+    <nav className="glass-card" style={{
+      position: 'fixed',
+      top: '1rem',
+      left: '1rem',
+      right: '1rem',
+      zIndex: 100,
+      padding: '0.75rem 2rem',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'between',
+      borderRadius: '1.5rem'
+    }}>
+      <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', color: 'white' }}>
+        <div style={{
+          background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
+          padding: '0.5rem',
+          borderRadius: '0.75rem',
+          display: 'flex'
+        }}>
+          <Library size={24} />
+        </div>
+        <span style={{ fontSize: '1.25rem', fontWeight: '700' }}>BiblioUTN</span>
+      </Link>
+
+      <div style={{ display: 'flex', gap: '1.5rem', marginLeft: 'auto' }}>
+        {!currentUser ? (
+          <>
+            <Link to="/" style={{ color: 'white', textDecoration: 'none', fontWeight: '500', alignSelf: 'center' }}>Libros</Link>
+            <Link to="/login" className="btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}>Login Admin</Link>
+          </>
+        ) : (
+          <>
+            <NavLink to="/admin" icon={<LayoutDashboard size={18} />} label="Dashboard" active={location.pathname === '/admin'} />
+            <NavLink to="/admin/inventory" icon={<BookOpen size={18} />} label="Inventario" active={location.pathname === '/admin/inventory'} />
+            <NavLink to="/admin/loans" icon={<ClipboardList size={18} />} label="Préstamos" active={location.pathname === '/admin/loans'} />
+            <NavLink to="/admin/students" icon={<Users size={18} />} label="Usuarios" active={location.pathname === '/admin/students'} />
+            <NavLink to="/admin/categories" icon={<Tags size={18} />} label="Categorías" active={location.pathname === '/admin/categories'} />
+            <NavLink to="/admin/users" icon={<Shield size={18} />} label="Admins" active={location.pathname === '/admin/users'} />
+            <button onClick={onLogout} className="text-muted" style={{ background: 'none', fontSize: '0.875rem', marginLeft: '0.5rem' }}>Salir</button>
+          </>
+        )}
+      </div>
+    </nav>
+  );
+};
+
+const NavLink = ({ to, icon, label, active }) => (
+  <Link to={to} style={{
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    textDecoration: 'none',
+    color: active ? 'var(--primary)' : 'var(--text-muted)',
+    fontSize: '0.875rem',
+    fontWeight: active ? '600' : '400',
+    transition: 'all 0.3s'
+  }}>
+    {icon}
+    <span>{label}</span>
+  </Link>
+);
+
+export default Navbar;
