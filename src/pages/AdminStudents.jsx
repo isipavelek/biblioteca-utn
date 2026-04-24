@@ -30,7 +30,7 @@ const AdminStudents = ({ students, setStudents, deleteStudent }) => {
     birthDate: ''
   });
 
-  const courses = ["1°A", "1°B", "1°C", "2°A", "2°B", "2°C", "3°A", "3°B", "3°C", "4°A", "4°B", "4°C", "5°A", "5°B", "5°C", "6°A", "6°B", "6°C"];
+  const courses = ["1°A", "1°B", "1°C", "2°A", "2°B", "2°C", "3°A", "3°B", "3°C", "4°A", "4°B", "4°C", "5°A", "5°B", "5°C", "6°A", "6°B", "6°C", "Cuerpo Docente", "Personal/Staff", "N/A"];
 
   const handleCleanDuplicates = async () => {
     if (!window.confirm('¿Estás seguro de que deseas eliminar los perfiles duplicados? (Se conservará un solo registro por persona basado en DNI o Nombre)')) return;
@@ -355,7 +355,15 @@ const AdminStudents = ({ students, setStudents, deleteStudent }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs text-muted block mb-1">Tipo de Usuario</label>
-                  <select className="input-field" value={formData.type} onChange={(e) => setFormData({...formData, type: e.target.value})}>
+                  <select className="input-field" value={formData.type} onChange={(e) => {
+                    const newType = e.target.value;
+                    let newGrade = formData.grade;
+                    if (newType === 'Profesor/a') newGrade = 'Cuerpo Docente';
+                    else if (newType === 'Staff' || newType === 'Preceptor/a') newGrade = 'Personal/Staff';
+                    else if (newType === 'Alumno' && (newGrade === 'Cuerpo Docente' || newGrade === 'Personal/Staff')) newGrade = '1°A';
+                    
+                    setFormData({...formData, type: newType, grade: newGrade});
+                  }}>
                     <option value="Alumno">Alumno</option>
                     <option value="Profesor/a">Profesor/a</option>
                     <option value="Preceptor/a">Preceptor/a</option>
