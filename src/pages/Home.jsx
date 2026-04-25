@@ -15,7 +15,8 @@ const Home = ({ books, categories }) => {
     return matchesSearch && matchesCategory;
   });
   return (
-    <div className="animate-fade-in" style={{ maxWidth: '1400px', margin: '0 auto' }}>
+    <div className="animate-fade-in">
+
       {/* Search & Filter Toolbar */}
       <div className="glass-card p-3 mb-6 flex flex-wrap items-center justify-between gap-4" style={{ borderRadius: '1rem' }}>
         <div className="flex items-center gap-4 flex-1 min-w-[300px]">

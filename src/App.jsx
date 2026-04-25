@@ -197,9 +197,9 @@ function App() {
 
   return (
     <Router>
-      <div className="min-h-screen">
+      <div style={{ minHeight: '100vh' }}>
         <Navbar currentUser={currentUser} onLogout={handleLogout} />
-        <main className="container mx-auto p-4 pt-16">
+        <main style={{ paddingTop: '64px', paddingLeft: '1.5rem', paddingRight: '1.5rem', paddingBottom: '2rem' }}>
           <Routes>
             <Route path="/" element={<Home books={books} categories={categories} />} />
             <Route path="/info" element={<Info />} />

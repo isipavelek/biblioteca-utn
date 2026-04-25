@@ -7,17 +7,20 @@ const Navbar = ({ currentUser, onLogout }) => {
   const isAdmin = location.pathname.startsWith('/admin');
 
   return (
-    <nav className="glass-card" style={{
+    <nav style={{
       position: 'fixed',
-      top: '0.5rem',
-      left: '1rem',
-      right: '1rem',
+      top: 0,
+      left: 0,
+      right: 0,
       zIndex: 100,
       padding: '0.5rem 1.5rem',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'between',
-      borderRadius: '1rem'
+      background: 'rgba(15, 23, 42, 0.85)',
+      backdropFilter: 'blur(12px)',
+      WebkitBackdropFilter: 'blur(12px)',
+      borderBottom: '1px solid rgba(255,255,255,0.08)',
+      height: '56px'
     }}>
       <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', color: 'white' }}>
         <div style={{
