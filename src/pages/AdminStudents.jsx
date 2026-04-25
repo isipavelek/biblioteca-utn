@@ -11,6 +11,8 @@ const AdminStudents = ({ students, setStudents, deleteStudent, loans = [], books
   const [editingStudent, setEditingStudent] = useState(null);
   const [selectedHistory, setSelectedHistory] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterCourse, setFilterCourse] = useState('all');
+  const [filterLoans, setFilterLoans] = useState('all'); // all | active | overdue | none
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null });
   const fileInputRef = useRef(null);
   
@@ -218,10 +220,28 @@ const AdminStudents = ({ students, setStudents, deleteStudent, loans = [], books
     e.target.value = '';
   };
 
+  const today = new Date();
   const filteredStudents = students.filter(s => {
-    const fullSearch = `${s.name} ${s.dni} ${s.legajo} ${s.grade} ${s.type}`.toLowerCase();
-    return fullSearch.includes(searchTerm.toLowerCase());
+    // Text search
+    const fullSearch = `${s.name} ${s.firstName} ${s.lastName} ${s.dni} ${s.legajo} ${s.grade} ${s.type}`.toLowerCase();
+    if (!fullSearch.includes(searchTerm.toLowerCase())) return false;
+    // Course filter
+    if (filterCourse !== 'all' && s.grade !== filterCourse) return false;
+    // Loan status filter
+    if (filterLoans !== 'all') {
+      const activeLoans = loans.filter(l => l.studentId === s.id && l.status === 'active');
+      if (filterLoans === 'none' && activeLoans.length > 0) return false;
+      if (filterLoans === 'active' && activeLoans.length === 0) return false;
+      if (filterLoans === 'overdue') {
+        const hasOverdue = activeLoans.some(l => l.dueDate && new Date(l.dueDate) < today);
+        if (!hasOverdue) return false;
+      }
+    }
+    return true;
   });
+
+  // Unique grades from current students for the course dropdown
+  const availableGrades = ['all', ...new Set(students.map(s => s.grade).filter(Boolean))].sort();
 
   return (
     <div className="animate-fade-in">
@@ -249,17 +269,64 @@ const AdminStudents = ({ students, setStudents, deleteStudent, loans = [], books
         </div>
       </div>
 
-      <div className="glass-card p-4 mb-8">
-        <div className="relative">
-          <Search className="absolute" style={{ left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} size={20} />
-          <input 
-            className="input-field" 
-            style={{ paddingLeft: '3rem' }} 
-            placeholder="Buscar por nombre, DNI, legajo, curso o tipo (Profesor, Alumno, Staff)..." 
+      {/* Search + Filters toolbar */}
+      <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+        {/* Search */}
+        <div style={{ position: 'relative', flex: '1', minWidth: '220px' }}>
+          <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+          <input
+            className="input-field"
+            style={{ paddingLeft: '2.5rem', height: '38px', fontSize: '0.85rem' }}
+            placeholder="Buscar por nombre, DNI, legajo..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={e => setSearchTerm(e.target.value)}
           />
         </div>
+        {/* Course filter */}
+        <select
+          value={filterCourse}
+          onChange={e => setFilterCourse(e.target.value)}
+          style={{
+            background: 'rgba(15,23,42,0.7)', border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: '0.6rem', padding: '0 0.75rem', height: '38px',
+            color: filterCourse !== 'all' ? 'var(--primary)' : 'white',
+            outline: 'none', cursor: 'pointer', fontSize: '0.82rem', fontWeight: '600',
+          }}
+        >
+          <option value="all" style={{ background: '#1e293b' }}>📚 Todos los cursos</option>
+          {availableGrades.filter(g => g !== 'all').map(g => (
+            <option key={g} value={g} style={{ background: '#1e293b' }}>{g}</option>
+          ))}
+        </select>
+        {/* Loan status filter */}
+        <select
+          value={filterLoans}
+          onChange={e => setFilterLoans(e.target.value)}
+          style={{
+            background: 'rgba(15,23,42,0.7)', border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: '0.6rem', padding: '0 0.75rem', height: '38px',
+            color: filterLoans !== 'all' ? 'var(--secondary)' : 'white',
+            outline: 'none', cursor: 'pointer', fontSize: '0.82rem', fontWeight: '600',
+          }}
+        >
+          <option value="all" style={{ background: '#1e293b' }}>📋 Todos los préstamos</option>
+          <option value="active" style={{ background: '#1e293b' }}>🟢 Con préstamo activo</option>
+          <option value="overdue" style={{ background: '#1e293b' }}>🔴 Con préstamo vencido</option>
+          <option value="none" style={{ background: '#1e293b' }}>⚪ Sin préstamos</option>
+        </select>
+        {/* Result count */}
+        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+          {filteredStudents.length} resultado{filteredStudents.length !== 1 ? 's' : ''}
+        </span>
+        {/* Clear filters */}
+        {(filterCourse !== 'all' || filterLoans !== 'all' || searchTerm) && (
+          <button
+            onClick={() => { setFilterCourse('all'); setFilterLoans('all'); setSearchTerm(''); }}
+            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '0.6rem', padding: '0 0.75rem', height: '38px', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+          >
+            <X size={13} /> Limpiar
+          </button>
+        )}
       </div>
 
       <div className="glass-card overflow-hidden" style={{ padding: 0 }}>
