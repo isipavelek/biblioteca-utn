@@ -355,16 +355,31 @@ const AdminInventory = ({ books, setBooks, categories, deleteItem }) => {
 
                 <div>
                   <label className="text-xs text-muted font-bold uppercase tracking-wider block mb-2">Tipo de Recurso</label>
-                  <select className="input-field" value={formData.type} onChange={(e) => setFormData({...formData, type: e.target.value})}>
-                    <option value="book">Libro / Manual</option>
-                    <option value="equipment">Equipamiento / Tecnología</option>
+                  <select className="input-field" value={formData.type} onChange={(e) => {
+                    const newType = e.target.value;
+                    const defaultCat = newType === 'equipment'
+                      ? 'Computación'
+                      : ((categories || []).filter(c => !['Computación','Tecnología','Equipamiento','Hardware','Software'].includes(c))[0] || categories?.[0] || '');
+                    setFormData({...formData, type: newType, category: defaultCat});
+                  }}>
+                    <option value="book">📚 Libro / Manual</option>
+                    <option value="equipment">💻 Equipamiento / Tecnología</option>
                   </select>
                 </div>
                 
                 <div>
                   <label className="text-xs text-muted font-bold uppercase tracking-wider block mb-2">Categoría</label>
                   <select className="input-field" value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})}>
-                    {(categories || []).map(c => <option key={c} value={c}>{c}</option>)}
+                    {formData.type === 'equipment' ? (
+                      // Equipment-specific categories
+                      ['Computación', 'Tecnología', 'Equipamiento', 'Hardware', 'Software', 'Electrónica', 'Otros'].map(c => (
+                        <option key={c} value={c}>{c}</option>
+                      ))
+                    ) : (
+                      // Book categories — deduplicated, exclude equipment-only ones
+                      [...new Set((categories || []).filter(c => !['Computación','Tecnología','Equipamiento','Hardware','Software','Electrónica'].includes(c)))]
+                        .map(c => <option key={c} value={c}>{c}</option>)
+                    )}
                   </select>
                 </div>
 
