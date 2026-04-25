@@ -17,17 +17,17 @@ const Home = ({ books, categories }) => {
 
   return (
     <div className="animate-fade-in">
-      <div className="mb-8" style={{ textAlign: 'center' }}>
-        <h1 className="text-3xl mb-8" style={{ fontSize: '3rem', background: 'linear-gradient(to right, #fff, var(--text-muted))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+      <div className="mb-6" style={{ textAlign: 'center' }}>
+        <h1 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '1.5rem', background: 'linear-gradient(to right, #fff, var(--text-muted))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
           Biblioteca Escolar
         </h1>
         
-        <div style={{ maxWidth: '600px', margin: '0 auto', display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+        <div style={{ maxWidth: '500px', margin: '0 auto', display: 'flex', gap: '0.75rem', marginBottom: '1.5rem' }}>
           <div className="relative w-full">
-            <Search className="absolute" style={{ left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} size={20} />
+            <Search className="absolute" style={{ left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} size={16} />
             <input 
               className="input-field" 
-              style={{ paddingLeft: '3rem' }} 
+              style={{ paddingLeft: '2.5rem', height: '40px', fontSize: '0.9rem' }} 
               placeholder="Buscar por título o autor..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -58,32 +58,44 @@ const Home = ({ books, categories }) => {
       </div>
 
       {viewMode === 'grid' ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem' }}>
           {filteredBooks.map(book => (
             <motion.div 
               layout
-              initial={{ opacity: 0, scale: 0.9 }}
+              initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               key={book.id} 
               className="glass-card hover-scale overflow-hidden" 
-              style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
+              style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', height: '100%' }}
               onClick={() => setSelectedBook(book)}
             >
-              <div style={{ height: '180px', width: '100%', overflow: 'hidden', position: 'relative' }}>
-                <img src={book.image} alt={book.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                <div style={{ position: 'absolute', top: '0.5rem', right: '0.5rem' }}>
-                   <span className="badge" style={{ background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(4px)', fontSize: '0.65rem' }}>{book.category}</span>
+              <div style={{ height: '130px', width: '100%', overflow: 'hidden', position: 'relative', background: '#0f172a' }}>
+                <img src={book.image} alt={book.title} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8 }} />
+                <div style={{ position: 'absolute', top: '0.4rem', right: '0.4rem' }}>
+                   <span className="badge" style={{ background: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(4px)', fontSize: '0.6rem', padding: '2px 6px' }}>{book.category}</span>
                 </div>
               </div>
-              <div className="p-4 flex-1 flex flex-col">
-                <h3 style={{ fontSize: '0.95rem', fontWeight: '700', marginBottom: '0.25rem', lineHeight: '1.3' }}>{book.title}</h3>
-                <p className="text-xs text-muted mb-4" style={{ flex: 1 }}>{book.author}</p>
+              <div className="p-3 flex-1 flex flex-col" style={{ padding: '0.75rem' }}>
+                <h3 style={{ 
+                  fontSize: '0.8rem', 
+                  fontWeight: '700', 
+                  marginBottom: '0.25rem', 
+                  lineHeight: '1.2',
+                  display: '-webkit-box',
+                  WebkitLineClamp: '2',
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  height: '1.9rem'
+                }}>
+                  {book.title}
+                </h3>
+                <p className="text-muted" style={{ fontSize: '0.65rem', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: '0.5rem' }}>{book.author}</p>
                 
-                <div className="flex items-center justify-between mt-auto">
-                  <span style={{ fontSize: '0.7rem', fontWeight: '700', color: book.available_count > 0 ? '#4ade80' : '#f87171' }}>
-                    {book.available_count > 0 ? `${book.available_count} disp.` : 'Agotado'}
+                <div className="flex items-center justify-between mt-auto pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                  <span style={{ fontSize: '0.65rem', fontWeight: '800', color: book.available_count > 0 ? '#4ade80' : '#f87171' }}>
+                    {book.available_count > 0 ? `${book.available_count} DISP.` : 'AGOTADO'}
                   </span>
-                  <Info size={14} className="text-muted" />
+                  <Info size={12} className="text-muted" />
                 </div>
               </div>
             </motion.div>
