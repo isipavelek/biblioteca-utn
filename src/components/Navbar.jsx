@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Library, LayoutDashboard, BookOpen, Users, Tags, ClipboardList, Shield } from 'lucide-react';
+import { Library, LayoutDashboard, BookOpen, Users, Tags, ClipboardList, Shield, HelpCircle } from 'lucide-react';
 
 const Navbar = ({ currentUser, onLogout }) => {
   const location = useLocation();
@@ -39,11 +39,13 @@ const Navbar = ({ currentUser, onLogout }) => {
       <div style={{ display: 'flex', gap: '1.5rem', marginLeft: 'auto' }}>
         {!currentUser ? (
           <>
-            <Link to="/" style={{ color: 'white', textDecoration: 'none', fontWeight: '500', alignSelf: 'center' }}>Libros</Link>
+            <Link to="/" style={{ color: location.pathname === '/' ? 'var(--primary)' : 'white', textDecoration: 'none', fontWeight: '600', alignSelf: 'center' }}>Libros</Link>
+            <Link to="/info" style={{ color: location.pathname === '/info' ? 'var(--primary)' : 'white', textDecoration: 'none', fontWeight: '600', alignSelf: 'center' }}>Reglas/Horarios</Link>
             <Link to="/login" className="btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}>Login Admin</Link>
           </>
         ) : (
           <>
+            <NavLink to="/info" icon={<HelpCircle size={18} />} label="Info" active={location.pathname === '/info'} />
             <NavLink to="/admin" icon={<LayoutDashboard size={18} />} label="Dashboard" active={location.pathname === '/admin'} />
             <NavLink to="/admin/inventory" icon={<BookOpen size={18} />} label="Inventario" active={location.pathname === '/admin/inventory'} />
             <NavLink to="/admin/loans" icon={<ClipboardList size={18} />} label="Préstamos" active={location.pathname === '/admin/loans'} />

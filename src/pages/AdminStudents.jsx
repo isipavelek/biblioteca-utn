@@ -1,14 +1,15 @@
 import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Trash2, Edit, User, Mail, GraduationCap, Upload, Search, X, Download, Phone, FileText, Hash, FileSpreadsheet, Users, UserCheck, Calendar, Shield } from 'lucide-react';
+import { Plus, Trash2, Edit, User, Mail, GraduationCap, Upload, Search, X, Download, Phone, FileText, Hash, FileSpreadsheet, Users, UserCheck, Calendar, Shield, History, Clock, CheckCircle } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { db } from '../firebase';
 import { doc, writeBatch } from 'firebase/firestore';
 import ConfirmDialog from '../components/ConfirmDialog';
 
-const AdminStudents = ({ students, setStudents, deleteStudent }) => {
+const AdminStudents = ({ students, setStudents, deleteStudent, loans = [], books = [] }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
+  const [selectedHistory, setSelectedHistory] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null });
   const fileInputRef = useRef(null);
@@ -29,6 +30,14 @@ const AdminStudents = ({ students, setStudents, deleteStudent }) => {
     instEmail: '',
     birthDate: ''
   });
+
+  const getStudentLoans = (studentId) => {
+    return loans
+      .filter(l => String(l.studentId) === String(studentId))
+      .sort((a, b) => new Date(b.loanDate) - new Date(a.loanDate));
+  };
+
+  const getBookTitle = (id) => books.find(b => b.id === id)?.title || 'Elemento eliminado';
 
   const courses = ["1°A", "1°B", "1°C", "2°A", "2°B", "2°C", "3°A", "3°B", "3°C", "4°A", "4°B", "4°C", "5°A", "5°B", "5°C", "6°A", "6°B", "6°C", "Cuerpo Docente", "Personal/Staff", "N/A"];
 
@@ -288,7 +297,7 @@ const AdminStudents = ({ students, setStudents, deleteStudent }) => {
                   </td>
                   <td style={{ padding: '1rem 1.5rem' }}>
                     <div className="flex flex-col gap-1">
-                      <div style={{ fontSize: '0.875rem' }}>{student.grade}</div>
+                      <div style={{ fontSize: '0.875rem' }}>{student.grade || '---'}</div>
                       <div style={{ 
                         fontSize: '0.65rem', 
                         fontWeight: '700', 
@@ -320,6 +329,9 @@ const AdminStudents = ({ students, setStudents, deleteStudent }) => {
                   </td>
                   <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
                     <div className="flex gap-2 justify-end">
+                      <button onClick={() => setSelectedHistory(student)} className="text-muted p-2" title="Ver Historial" style={{ background: 'rgba(99, 102, 241, 0.05)', color: 'var(--primary)', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}>
+                        <History size={16} />
+                      </button>
                       <button onClick={() => handleOpenModal(student)} className="text-muted p-2" style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}>
                         <Edit size={16} />
                       </button>
@@ -440,6 +452,73 @@ const AdminStudents = ({ students, setStudents, deleteStudent }) => {
                 <button type="submit" className="btn-primary flex-1 py-3">Guardar Registro</button>
               </div>
             </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {selectedHistory && createPortal(
+        <div style={{ position: 'fixed', inset: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div onClick={() => setSelectedHistory(null)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)' }} />
+          <div className="glass-card" style={{ maxWidth: '800px', width: '100%', padding: '2.5rem', position: 'relative', background: '#1e293b', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div className="flex justify-between items-center mb-8">
+              <div className="flex items-center gap-4">
+                <div style={{ background: 'var(--primary)', color: 'white', padding: '0.75rem', borderRadius: '1rem' }}>
+                  <History size={24} />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold">Historial de Préstamos</h2>
+                  <p className="text-muted text-sm">{selectedHistory.lastName ? `${selectedHistory.lastName}, ${selectedHistory.firstName}` : selectedHistory.name}</p>
+                </div>
+              </div>
+              <button onClick={() => setSelectedHistory(null)} className="text-muted hover:text-white"><X size={24} /></button>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              {getStudentLoans(selectedHistory.id).length > 0 ? (
+                getStudentLoans(selectedHistory.id).map(loan => (
+                  <div key={loan.id} className="glass-card p-4" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-4">
+                        <div style={{ background: 'rgba(255,255,255,0.05)', padding: '0.5rem', borderRadius: '0.75rem' }}>
+                          <Clock size={20} className="text-muted" />
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: '700', fontSize: '1rem' }}>{getBookTitle(loan.bookId)}</div>
+                          <div className="text-xs text-muted flex items-center gap-2 mt-1">
+                            <Calendar size={12} />
+                            Prestado: {loan.loanDate} 
+                            {loan.returnDate && ` | Devuelto: ${loan.returnDate}`}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className={`badge ${loan.status === 'active' ? 'badge-loaned' : 'badge-available'}`} style={{ fontSize: '0.65rem' }}>
+                          {loan.status === 'active' ? 'PENDIENTE' : 'DEVUELTO'}
+                        </span>
+                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>Cód: {loan.fullCode || 'N/A'}</div>
+                      </div>
+                    </div>
+                    {loan.observations && (
+                      <div style={{ marginTop: '1rem', padding: '0.75rem', background: 'rgba(0,0,0,0.2)', borderRadius: '0.5rem', fontSize: '0.85rem', fontStyle: 'italic', color: '#94a3b8' }}>
+                         "{loan.observations}"
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div style={{ textAlign: 'center', padding: '3rem 0' }}>
+                   <p className="text-muted">No hay registros históricos para este usuario.</p>
+                </div>
+              )}
+            </div>
+            
+            <button 
+              onClick={() => setSelectedHistory(null)}
+              className="btn-primary w-full mt-8"
+            >
+              Cerrar Historial
+            </button>
           </div>
         </div>,
         document.body

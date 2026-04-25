@@ -12,8 +12,8 @@ import AdminStudents from './pages/AdminStudents';
 import AdminCategories from './pages/AdminCategories';
 import AdminAdmins from './pages/AdminAdmins';
 import LoginPage from './pages/LoginPage';
+import Info from './pages/Info';
 import Navbar from './components/Navbar';
-import './App.css';
 
 function App() {
   const [loading, setLoading] = useState(true);
@@ -202,6 +202,7 @@ function App() {
         <main className="container mx-auto p-4 pt-24">
           <Routes>
             <Route path="/" element={<Home books={books} categories={categories} />} />
+            <Route path="/info" element={<Info />} />
             <Route path="/login" element={<LoginPage admins={admins} setCurrentUser={setCurrentUser} />} />
             
             <Route path="/admin" element={<ProtectedRoute><AdminDashboard books={books} students={students} loans={loans} /></ProtectedRoute>} />
@@ -248,6 +249,8 @@ function App() {
                     newStudents.forEach(s => syncItem('students', s));
                   }} 
                   deleteStudent={(id) => deleteItem('students', id)}
+                  loans={loans}
+                  books={books}
                 />
               </ProtectedRoute>
             } />
