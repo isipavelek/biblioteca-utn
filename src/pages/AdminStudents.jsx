@@ -269,6 +269,7 @@ const AdminStudents = ({ students, setStudents, deleteStudent, loans = [], books
               <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.02)' }}>
                 <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Usuario</th>
                 <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Curso/Rol</th>
+                <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Préstamos</th>
                 <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Documento</th>
                 <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Contacto</th>
                 <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Acciones</th>
@@ -312,7 +313,39 @@ const AdminStudents = ({ students, setStudents, deleteStudent, loans = [], books
                       </div>
                     </div>
                   </td>
-                  <td style={{ padding: '1rem 1.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                  <td style={{ padding: '0.75rem 1rem' }}>
+                    {(() => {
+                      const today = new Date();
+                      const activeLoans = loans
+                        ? loans.filter(l => l.studentId === student.id && l.status === 'active')
+                        : [];
+                      if (activeLoans.length === 0) {
+                        return <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Sin préstamos</span>;
+                      }
+                      return (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                          {activeLoans.map(loan => {
+                            const due = loan.dueDate ? new Date(loan.dueDate) : null;
+                            const overdue = due && due < today;
+                            const book = books ? books.find(b => String(b.id) === String(loan.bookId)) : null;
+                            return (
+                              <div key={loan.id} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: overdue ? '#f87171' : '#4ade80', flexShrink: 0 }} />
+                                <span style={{ fontSize: '0.7rem', color: overdue ? '#f87171' : 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '130px' }}>
+                                  {book?.title?.slice(0, 18) || 'Libro'}
+                                </span>
+                                <span style={{ fontSize: '0.65rem', color: overdue ? '#f87171' : 'var(--text-muted)', flexShrink: 0 }}>
+                                  {due ? due.toLocaleDateString('es-AR') : '---'}
+                                </span>
+                                {overdue && <span style={{ fontSize: '0.58rem', background: 'rgba(248,113,113,0.15)', color: '#f87171', padding: '1px 4px', borderRadius: '3px', fontWeight: '700', flexShrink: 0 }}>VENCIDO</span>}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+                  </td>
+                  <td style={{ padding: '0.75rem 1rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
                     {student.dniType}: {student.dni || '---'}
                   </td>
                   <td style={{ padding: '1rem 1.5rem' }}>
