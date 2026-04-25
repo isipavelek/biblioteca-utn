@@ -14,8 +14,6 @@ const Home = ({ books, categories }) => {
     const matchesCategory = selectedCategory === 'All' || book.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
-
-  return (
   return (
     <div className="animate-fade-in" style={{ maxWidth: '1400px', margin: '0 auto' }}>
       {/* Search & Filter Toolbar */}
