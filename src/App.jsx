@@ -14,6 +14,7 @@ import AdminAdmins from './pages/AdminAdmins';
 import LoginPage from './pages/LoginPage';
 import Info from './pages/Info';
 import Navbar from './components/Navbar';
+import QuickLoanModal from './components/QuickLoanModal';
 
 function App() {
   const [loading, setLoading] = useState(true);
@@ -199,6 +200,24 @@ function App() {
     <Router>
       <div style={{ minHeight: '100vh' }}>
         <Navbar currentUser={currentUser} onLogout={handleLogout} />
+        {currentUser && (
+          <QuickLoanModal
+            books={books}
+            students={students}
+            loans={loans}
+            onLoanCreated={async (newLoan, loanedBook) => {
+              const updatedBook = { ...loanedBook, available_count: (loanedBook.available_count || 1) - 1 };
+              const newLoans = [...loans, newLoan];
+              const newBooks = books.map(b => b.id === loanedBook.id ? updatedBook : b);
+              setLoans(newLoans);
+              setBooks(newBooks);
+              await import('firebase/firestore').then(({ setDoc, doc }) => {
+                setDoc(doc(db, 'loans', String(newLoan.id)), newLoan);
+                setDoc(doc(db, 'books', String(updatedBook.id)), updatedBook);
+              });
+            }}
+          />
+        )}
         <main style={{ paddingTop: '64px', paddingLeft: '1.5rem', paddingRight: '1.5rem', paddingBottom: '2rem' }}>
           <Routes>
             <Route path="/" element={<Home books={books} categories={categories} />} />
