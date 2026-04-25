@@ -231,17 +231,17 @@ const AdminInventory = ({ books, setBooks, categories, deleteItem }) => {
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
             <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.02)' }}>
-              <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Código</th>
-              <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Elemento</th>
-              <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Detalles</th>
-              <th style={{ padding: '1rem 1.5rem', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Stock</th>
-              <th style={{ padding: '1rem 1.5rem', textAlign: 'right', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Acciones</th>
+              <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Código</th>
+              <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Elemento</th>
+              <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Detalles</th>
+              <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Stock</th>
+              <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {filteredBooks.map(item => (
               <tr key={item.id} className="hover-card-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', transition: 'background 0.2s' }}>
-                <td style={{ padding: '1.25rem 1.5rem' }}>
+                <td style={{ padding: '0.75rem 1rem' }}>
                   <code style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--primary)', padding: '0.3rem 0.6rem', borderRadius: '6px', fontSize: '0.8rem', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
                     {getBaseCode(item)}
                   </code>
@@ -249,7 +249,7 @@ const AdminInventory = ({ books, setBooks, categories, deleteItem }) => {
                 <td style={{ padding: '1rem 1.5rem' }}>
                   <div className="flex items-center gap-4">
                     <div style={{ position: 'relative' }}>
-                      <img src={item.image} alt="" style={{ width: '48px', height: '48px', borderRadius: '10px', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)' }} />
+                      <img src={item.image} alt="" style={{ width: '36px', height: '36px', borderRadius: '8px', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)' }} />
                       <div style={{ position: 'absolute', bottom: '-6px', right: '-6px', background: '#1e293b', borderRadius: '50%', padding: '4px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.2)' }}>
                         {item.type === 'equipment' ? <Laptop size={12} color="#ec4899" /> : <BookIcon size={12} color="#6366f1" />}
                       </div>

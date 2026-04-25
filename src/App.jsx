@@ -199,7 +199,7 @@ function App() {
     <Router>
       <div className="min-h-screen">
         <Navbar currentUser={currentUser} onLogout={handleLogout} />
-        <main className="container mx-auto p-4 pt-24">
+        <main className="container mx-auto p-4 pt-16">
           <Routes>
             <Route path="/" element={<Home books={books} categories={categories} />} />
             <Route path="/info" element={<Info />} />

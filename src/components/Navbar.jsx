@@ -9,26 +9,26 @@ const Navbar = ({ currentUser, onLogout }) => {
   return (
     <nav className="glass-card" style={{
       position: 'fixed',
-      top: '1rem',
+      top: '0.5rem',
       left: '1rem',
       right: '1rem',
       zIndex: 100,
-      padding: '0.75rem 2rem',
+      padding: '0.5rem 1.5rem',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'between',
-      borderRadius: '1.5rem'
+      borderRadius: '1rem'
     }}>
-      <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', color: 'white' }}>
+      <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', color: 'white' }}>
         <div style={{
           background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
-          padding: '0.5rem',
-          borderRadius: '0.75rem',
+          padding: '0.4rem',
+          borderRadius: '0.6rem',
           display: 'flex'
         }}>
-          <Library size={24} />
+          <Library size={20} />
         </div>
-        <span style={{ fontSize: '1.25rem', fontWeight: '700' }}>BiblioUTN</span>
+        <span style={{ fontSize: '1.1rem', fontWeight: '700' }}>BiblioUTN</span>
         {currentUser && (
           <span style={{ fontSize: '0.7rem', color: '#4ade80', marginLeft: '0.5rem', background: 'rgba(74, 222, 128, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>
             Live Sync

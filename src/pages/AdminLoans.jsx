@@ -250,61 +250,61 @@ const AdminLoans = ({ loans, setLoans, books, setBooks, students, deleteLoan }) 
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: 'rgba(255,255,255,0.05)', textAlign: 'left' }}>
-              <th style={{ padding: '1.25rem' }}>Código</th>
-              <th style={{ padding: '1.25rem' }}>Elemento</th>
-              <th style={{ padding: '1.25rem' }}>Usuario</th>
-              <th style={{ padding: '1.25rem' }}>Fecha Préstamo</th>
-              <th style={{ padding: '1.25rem' }}>Estado / Obs.</th>
-              <th style={{ padding: '1.25rem' }}>Acciones</th>
+              <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Código</th>
+              <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Elemento</th>
+              <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Usuario</th>
+              <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Fecha Préstamo</th>
+              <th style={{ padding: '0.75rem 1rem', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Estado / Obs.</th>
+              <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {filteredLoans.map(loan => (
               <tr key={loan.id} style={{ borderBottom: '1px solid var(--border-glass)' }}>
-                <td style={{ padding: '1.25rem' }}>
+                <td style={{ padding: '0.75rem 1rem' }}>
                   <code style={{ background: 'rgba(255,255,255,0.1)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.85rem' }}>
                     {loan.fullCode || 'N/A'}
                   </code>
                 </td>
-                <td style={{ padding: '1.25rem' }}>
-                  <div className="flex items-center gap-6" style={{ gap: '0.75rem' }}>
-                    <BookOpen size={18} className="text-muted" />
-                    <span style={{ fontWeight: '500' }}>{getBookTitle(loan.bookId)}</span>
+                <td style={{ padding: '0.75rem 1rem' }}>
+                  <div className="flex items-center gap-2" style={{ gap: '0.5rem' }}>
+                    <BookOpen size={16} className="text-muted" />
+                    <span style={{ fontWeight: '500', fontSize: '0.9rem' }}>{getBookTitle(loan.bookId)}</span>
                   </div>
                 </td>
-                <td style={{ padding: '1.25rem' }}>
-                  <div className="flex items-center gap-6" style={{ gap: '0.75rem' }}>
-                    <User size={18} className="text-muted" />
-                    <span>{getStudentName(loan.studentId)}</span>
+                <td style={{ padding: '0.75rem 1rem' }}>
+                  <div className="flex items-center gap-2" style={{ gap: '0.5rem' }}>
+                    <User size={16} className="text-muted" />
+                    <span style={{ fontSize: '0.9rem' }}>{getStudentName(loan.studentId)}</span>
                   </div>
                 </td>
-                <td style={{ padding: '1.25rem' }}>{loan.loanDate}</td>
-                <td style={{ padding: '1.25rem' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                    <span className={`badge ${loan.status === 'active' ? 'badge-loaned' : 'badge-available'}`} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', width: 'fit-content' }}>
-                      {loan.status === 'active' ? <Clock size={12} /> : <Check size={12} />}
+                <td style={{ padding: '0.75rem 1rem', fontSize: '0.85rem' }}>{loan.loanDate}</td>
+                <td style={{ padding: '0.75rem 1rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <span className={`badge ${loan.status === 'active' ? 'badge-loaned' : 'badge-available'}`} style={{ display: 'flex', alignItems: 'center', gap: '4px', width: 'fit-content', fontSize: '0.65rem', padding: '2px 6px' }}>
+                      {loan.status === 'active' ? <Clock size={10} /> : <Check size={10} />}
                       {loan.status === 'active' ? 'Pendiente' : 'Devuelto'}
                     </span>
                     {loan.observations && (
-                      <div className="text-sm text-muted flex items-center gap-6" style={{ gap: '0.25rem', marginTop: '0.25rem' }}>
-                        <MessageSquare size={12} />
+                      <div className="text-[10px] text-muted flex items-center gap-1" style={{ marginTop: '2px' }}>
+                        <MessageSquare size={10} />
                         <span style={{ fontStyle: 'italic' }}>{loan.observations}</span>
                       </div>
                     )}
                   </div>
                 </td>
-                <td style={{ padding: '1.25rem' }}>
-                  <div className="flex items-center gap-2">
+                <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
+                  <div className="flex items-center gap-2 justify-end">
                     {loan.status === 'active' ? (
                       <button 
                         onClick={() => handleOpenReturnModal(loan)}
                         className="btn-primary" 
-                        style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem', background: 'rgba(34, 197, 94, 0.2)', color: '#4ade80', border: '1px solid #4ade80' }}
+                        style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'rgba(34, 197, 94, 0.15)', color: '#4ade80', border: '1px solid rgba(74, 222, 128, 0.3)' }}
                       >
                         Devolución
                       </button>
                     ) : (
-                      <div className="text-sm text-muted">Devuelto: {loan.returnDate}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{loan.returnDate}</div>
                     )}
                     <button 
                       onClick={() => handleDeleteLoan(loan.id)}
