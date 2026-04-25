@@ -9,11 +9,9 @@ const AdminDashboard = ({ books, students, loans }) => {
   const availableItems = books.reduce((acc, book) => acc + (book.available_count || 0), 0);
   const loanedItems = totalItems - availableItems;
   
-  // Equipment vs Books
   const equipmentCount = books.filter(b => b.category === 'Equipamiento' || b.category === 'Tecnología').reduce((acc, b) => acc + b.total_count, 0);
   const literatureCount = totalItems - equipmentCount;
 
-  // Overdue Loans
   const today = new Date();
   const overdueLoans = loans.filter(l => {
     if (l.status !== 'active') return false;
@@ -38,7 +36,7 @@ const AdminDashboard = ({ books, students, loans }) => {
       acc.push({ name: catName, total: (book.total_count || 0), available: (book.available_count || 0) });
     }
     return acc;
-  }, []);
+  }, []).slice(0, 15); // Limit categories for better density
 
   const getMostBorrowed = () => {
     let filteredLoans = loans;
@@ -67,18 +65,17 @@ const AdminDashboard = ({ books, students, loans }) => {
   const rankingData = getMostBorrowed();
 
   return (
-    <div className="animate-fade-in">
-      <div className="flex justify-between items-center mb-8">
+    <div className="animate-fade-in" style={{ maxWidth: '1400px', margin: '0 auto' }}>
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl">Panel de Control</h1>
-          <p className="text-muted text-sm mt-1">Resumen general de la biblioteca y equipamiento</p>
+          <h1 className="text-2xl font-bold">Resumen Estadístico</h1>
+          <p className="text-muted text-xs mt-1">Indicadores clave de la biblioteca</p>
         </div>
-        <div className="flex items-center gap-4 glass-card px-4 py-2" style={{ padding: '0.5rem 1rem' }}>
-          <Filter size={18} className="text-muted" />
-          <span className="text-sm text-muted">Filtrar Ranking:</span>
+        <div className="flex items-center gap-3 glass-card px-3 py-1.5" style={{ borderRadius: '0.75rem' }}>
+          <Filter size={14} className="text-muted" />
           <select 
-            className="text-sm" 
-            style={{ background: 'none', color: 'white', border: 'none', outline: 'none', cursor: 'pointer' }}
+            className="text-xs" 
+            style={{ background: 'none', color: 'white', border: 'none', outline: 'none', cursor: 'pointer', fontWeight: '600' }}
             value={courseFilter}
             onChange={(e) => setCourseFilter(e.target.value)}
           >
@@ -90,161 +87,133 @@ const AdminDashboard = ({ books, students, loans }) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard icon={<Book size={20} />} label="Libros" value={literatureCount} color="#6366f1" />
-        <StatCard icon={<Monitor size={20} />} label="Equipos" value={equipmentCount} color="#ec4899" />
-        <StatCard icon={<AlertTriangle size={20} />} label="Vencidos" value={overdueLoans.length} color="#f87171" highlight={overdueLoans.length > 0} />
-        <StatCard icon={<TrendingUp size={20} />} label="Uso" value={`${totalItems > 0 ? Math.round((loanedItems/totalItems)*100) : 0}%`} color="#4ade80" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <StatCard icon={<Book size={18} />} label="Libros" value={literatureCount} color="#6366f1" />
+        <StatCard icon={<Monitor size={18} />} label="Equipos" value={equipmentCount} color="#ec4899" />
+        <StatCard icon={<AlertTriangle size={18} />} label="Vencidos" value={overdueLoans.length} color="#f87171" highlight={overdueLoans.length > 0} />
+        <StatCard icon={<TrendingUp size={18} />} label="Uso" value={`${totalItems > 0 ? Math.round((loanedItems/totalItems)*100) : 0}%`} color="#4ade80" />
       </div>
 
-      {overdueLoans.length > 0 && (
-        <div className="glass-card mb-6 p-4 border-l-4" style={{ borderColor: '#f87171', background: 'rgba(248, 113, 113, 0.05)' }}>
-          <div className="flex items-center gap-3 mb-3">
-            <Clock className="text-red-400" size={20} style={{ color: '#f87171' }} />
-            <h3 className="text-sm font-bold uppercase tracking-wider" style={{ color: '#f87171' }}>Alertas Críticas: Préstamos Vencidos</h3>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            {overdueLoans.slice(0, 3).map(loan => {
-              const student = students.find(s => s.id === loan.studentId);
-              const book = books.find(b => b.id === loan.bookId);
-              return (
-                <div key={loan.id} className="glass-card px-3 py-2 text-xs flex items-center gap-2" style={{ background: 'rgba(255,255,255,0.03)' }}>
-                  <span style={{ fontWeight: '700' }}>{student?.lastName || 'Usuario'}:</span>
-                  <span className="text-muted">{book?.title || 'Libro'}</span>
-                  <span style={{ color: '#f87171', marginLeft: '4px' }}>{new Date(loan.dueDate).toLocaleDateString()}</span>
-                </div>
-              );
-            })}
-            {overdueLoans.length > 3 && <div className="text-xs text-muted self-center">y {overdueLoans.length - 3} más...</div>}
-          </div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
-        <div className="glass-card p-5 lg:col-span-4" style={{ minHeight: '350px' }}>
-          <h3 className="text-xs mb-6 font-bold uppercase text-muted tracking-widest">Disponibilidad</h3>
-          <div style={{ height: '220px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={90}
-                  paddingAngle={8}
-                  dataKey="value"
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  contentStyle={{ background: '#1e293b', border: 'none', borderRadius: '0.75rem', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.3)' }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="flex justify-around mt-4">
-            {pieData.map(d => (
-              <div key={d.name} className="text-center">
-                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: d.color, margin: '0 auto 4px' }}></div>
-                <div className="text-xs font-bold">{d.value}</div>
-                <div className="text-[10px] text-muted uppercase">{d.name}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="glass-card p-5 lg:col-span-8" style={{ minHeight: '350px' }}>
-          <h3 className="text-xs mb-6 font-bold uppercase text-muted tracking-widest">Distribución por Categoría</h3>
-          <div style={{ height: '250px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={categoryData}>
-                <XAxis dataKey="name" stroke="#64748b" fontSize={10} axisLine={false} tickLine={false} />
-                <YAxis stroke="#64748b" fontSize={10} axisLine={false} tickLine={false} />
-                <Tooltip 
-                  cursor={{ fill: 'rgba(255,255,255,0.02)' }}
-                  contentStyle={{ background: '#1e293b', border: 'none', borderRadius: '0.75rem' }}
-                />
-                <Bar dataKey="total" name="Total" fill="rgba(99, 102, 241, 0.8)" radius={[4, 4, 0, 0]} barSize={20} />
-                <Bar dataKey="available" name="Disponibles" fill="rgba(74, 222, 128, 0.8)" radius={[4, 4, 0, 0]} barSize={20} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      </div>
-
-      <div className="glass-card p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <Award size={22} className="text-secondary" style={{ color: 'var(--secondary)' }} />
-          <h3 className="text-xs font-bold uppercase text-muted tracking-widest">Ranking de Más Solicitados {courseFilter !== 'all' ? `en ${courseFilter}` : 'General'}</h3>
-        </div>
-        
-        {rankingData.length > 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-            <div className="flex flex-col gap-3">
-              {rankingData.map((item, index) => (
-                <div key={item.id} className="flex items-center gap-4 group" style={{ background: 'rgba(255,255,255,0.02)', padding: '0.75rem 1.25rem', borderRadius: '1rem', border: '1px solid transparent', transition: 'all 0.3s' }}>
-                  <div style={{ 
-                    width: '32px', 
-                    height: '32px', 
-                    background: index === 0 ? 'linear-gradient(135deg, #fbbf24, #d97706)' : index === 1 ? 'linear-gradient(135deg, #94a3b8, #475569)' : index === 2 ? 'linear-gradient(135deg, #a8a29e, #78716c)' : 'rgba(255,255,255,0.05)',
-                    color: index < 3 ? 'white' : 'var(--text-muted)',
-                    borderRadius: '0.75rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: '800',
-                    fontSize: '0.875rem'
-                  }}>
-                    {index + 1}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: '600', fontSize: '0.95rem' }}>{item.title}</div>
-                    <div className="text-xs text-muted">{item.count} préstamos registrados</div>
-                  </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-4 flex flex-col gap-6">
+          {/* Disponibilidad */}
+          <div className="glass-card p-4">
+            <h3 className="text-[10px] font-bold uppercase text-muted tracking-widest mb-4">Disponibilidad</h3>
+            <div style={{ height: '180px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={75}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {pieData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ background: '#1e293b', border: 'none', borderRadius: '0.5rem', fontSize: '12px' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex justify-around mt-2">
+              {pieData.map(d => (
+                <div key={d.name} className="text-center">
+                  <div className="text-sm font-bold">{d.value}</div>
+                  <div className="text-[9px] text-muted uppercase">{d.name}</div>
                 </div>
               ))}
             </div>
-            <div style={{ height: '240px' }}>
+          </div>
+
+          {/* Overdue Alerts */}
+          {overdueLoans.length > 0 && (
+            <div className="glass-card p-4" style={{ background: 'rgba(248, 113, 113, 0.05)', borderLeft: '3px solid #f87171' }}>
+              <h3 className="text-[10px] font-bold uppercase text-red-400 tracking-widest mb-3 flex items-center gap-2">
+                <Clock size={12} /> Alertas de Vencimiento
+              </h3>
+              <div className="flex flex-col gap-2">
+                {overdueLoans.slice(0, 3).map(loan => {
+                  const student = students.find(s => s.id === loan.studentId);
+                  const book = books.find(b => b.id === loan.bookId);
+                  return (
+                    <div key={loan.id} className="text-[10px] p-2 rounded-lg" style={{ background: 'rgba(0,0,0,0.2)' }}>
+                      <span className="font-bold text-white">{student?.lastName}: </span>
+                      <span className="text-muted truncate inline-block max-w-[120px] align-bottom">{book?.title}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="lg:col-span-8 flex flex-col gap-6">
+          {/* Distribución */}
+          <div className="glass-card p-4">
+            <h3 className="text-[10px] font-bold uppercase text-muted tracking-widest mb-4">Distribución por Categoría</h3>
+            <div style={{ height: '200px' }}>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart layout="vertical" data={rankingData} margin={{ left: 10, right: 30 }}>
-                  <XAxis type="number" hide />
-                  <YAxis type="category" dataKey="title" hide />
+                <BarChart data={categoryData}>
+                  <XAxis dataKey="name" stroke="#64748b" fontSize={9} axisLine={false} tickLine={false} />
+                  <YAxis stroke="#64748b" fontSize={9} axisLine={false} tickLine={false} />
                   <Tooltip 
                     cursor={{ fill: 'rgba(255,255,255,0.02)' }}
-                    contentStyle={{ background: '#1e293b', border: 'none', borderRadius: '0.75rem' }}
+                    contentStyle={{ background: '#1e293b', border: 'none', borderRadius: '0.5rem', fontSize: '11px' }}
                   />
-                  <Bar dataKey="count" fill="var(--secondary)" radius={[0, 6, 6, 0]} barSize={16} />
+                  <Bar dataKey="total" name="Total" fill="var(--primary)" opacity={0.8} radius={[2, 2, 0, 0]} barSize={12} />
+                  <Bar dataKey="available" name="Disp." fill="var(--secondary)" opacity={0.8} radius={[2, 2, 0, 0]} barSize={12} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
-        ) : (
-          <div className="py-12 text-center text-muted">
-            <ClipboardList size={40} className="mx-auto mb-3 opacity-20" />
-            <p>No hay datos suficientes para generar un ranking en este curso.</p>
+
+          {/* Ranking */}
+          <div className="glass-card p-4">
+            <h3 className="text-[10px] font-bold uppercase text-muted tracking-widest mb-4 flex items-center gap-2">
+              <Award size={14} className="text-secondary" /> Ranking de lo más solicitado
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                {rankingData.map((item, index) => (
+                  <div key={item.id} className="flex items-center gap-3 p-2 rounded-lg" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                    <div className="text-xs font-black text-muted" style={{ width: '15px' }}>{index + 1}</div>
+                    <div className="text-[11px] font-medium truncate flex-1">{item.title}</div>
+                    <div className="text-[10px] font-bold text-secondary">{item.count}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ height: '140px' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart layout="vertical" data={rankingData}>
+                    <XAxis type="number" hide />
+                    <YAxis type="category" dataKey="title" hide />
+                    <Bar dataKey="count" fill="var(--accent)" radius={[0, 4, 4, 0]} barSize={10} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
 };
 
 const StatCard = ({ icon, label, value, color, highlight }) => (
-  <div className="glass-card p-4 transition-all hover:scale-[1.02]" style={{ 
-    display: 'flex', 
-    alignItems: 'center', 
-    gap: '1.25rem',
-    borderLeft: highlight ? `4px solid ${color}` : '1px solid rgba(255,255,255,0.1)'
+  <div className="glass-card p-3 flex items-center gap-3" style={{ 
+    borderLeft: highlight ? `3px solid ${color}` : '1px solid rgba(255,255,255,0.05)',
+    height: '70px'
   }}>
-    <div style={{ background: `${color}15`, color: color, padding: '0.875rem', borderRadius: '1rem', display: 'flex' }}>
+    <div style={{ background: `${color}10`, color: color, padding: '0.6rem', borderRadius: '0.5rem' }}>
       {icon}
     </div>
     <div style={{ overflow: 'hidden' }}>
-      <p className="text-xs font-bold uppercase tracking-widest text-muted mb-1">{label}</p>
-      <h2 style={{ fontSize: '1.5rem', fontWeight: '800', color: highlight ? color : 'white' }}>{value}</h2>
+      <p className="text-[9px] font-bold uppercase tracking-widest text-muted mb-0.5">{label}</p>
+      <h2 style={{ fontSize: '1.25rem', fontWeight: '800', lineHeight: 1 }}>{value}</h2>
     </div>
   </div>
 );

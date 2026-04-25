@@ -16,68 +16,97 @@ const Home = ({ books, categories }) => {
   });
 
   return (
-    <div className="animate-fade-in">
-      <div className="mb-6" style={{ textAlign: 'center' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '1.5rem', background: 'linear-gradient(to right, #fff, var(--text-muted))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-          Biblioteca Escolar
-        </h1>
-        
-        <div style={{ maxWidth: '500px', margin: '0 auto', display: 'flex', gap: '0.75rem', marginBottom: '1.5rem' }}>
-          <div className="relative w-full">
+  return (
+    <div className="animate-fade-in" style={{ maxWidth: '1400px', margin: '0 auto' }}>
+      {/* Search & Filter Toolbar */}
+      <div className="glass-card p-3 mb-6 flex flex-wrap items-center justify-between gap-4" style={{ borderRadius: '1rem' }}>
+        <div className="flex items-center gap-4 flex-1 min-w-[300px]">
+          <div className="relative flex-1">
             <Search className="absolute" style={{ left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} size={16} />
             <input 
               className="input-field" 
-              style={{ paddingLeft: '2.5rem', height: '40px', fontSize: '0.9rem' }} 
-              placeholder="Buscar por título o autor..." 
+              style={{ paddingLeft: '2.5rem', height: '36px', fontSize: '0.85rem', background: 'rgba(0,0,0,0.2)' }} 
+              placeholder="Buscar título o autor..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <div className="flex glass-card p-1" style={{ borderRadius: '0.75rem', gap: '0.25rem' }}>
+          <div className="flex glass-card p-1" style={{ borderRadius: '0.6rem', gap: '0.15rem' }}>
             <button 
               onClick={() => setViewMode('grid')}
-              style={{ padding: '0.5rem', borderRadius: '0.5rem', background: viewMode === 'grid' ? 'var(--primary)' : 'transparent', color: viewMode === 'grid' ? 'white' : 'var(--text-muted)' }}
+              style={{ padding: '0.4rem', borderRadius: '0.5rem', background: viewMode === 'grid' ? 'var(--primary)' : 'transparent', color: viewMode === 'grid' ? 'white' : 'var(--text-muted)' }}
             >
-              <LayoutGrid size={20} />
+              <LayoutGrid size={18} />
             </button>
             <button 
               onClick={() => setViewMode('list')}
-              style={{ padding: '0.5rem', borderRadius: '0.5rem', background: viewMode === 'list' ? 'var(--primary)' : 'transparent', color: viewMode === 'list' ? 'white' : 'var(--text-muted)' }}
+              style={{ padding: '0.4rem', borderRadius: '0.5rem', background: viewMode === 'list' ? 'var(--primary)' : 'transparent', color: viewMode === 'list' ? 'white' : 'var(--text-muted)' }}
             >
-              <List size={20} />
+              <List size={18} />
             </button>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <CategoryBtn active={selectedCategory === 'All'} onClick={() => setSelectedCategory('All')} label="Todos" />
+        <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+          <button
+            onClick={() => setSelectedCategory('All')}
+            className="badge"
+            style={{
+              background: selectedCategory === 'All' ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
+              color: selectedCategory === 'All' ? 'white' : 'var(--text-muted)',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              padding: '0.4rem 0.8rem',
+              fontSize: '0.7rem',
+              border: '1px solid transparent',
+              borderColor: selectedCategory === 'All' ? 'transparent' : 'rgba(255,255,255,0.05)'
+            }}
+          >
+            Todos
+          </button>
           {[...new Set(categories)].map(cat => (
-            <CategoryBtn key={cat} active={selectedCategory === cat} onClick={() => setSelectedCategory(cat)} label={cat} />
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className="badge"
+              style={{
+                background: selectedCategory === cat ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
+                color: selectedCategory === cat ? 'white' : 'var(--text-muted)',
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                padding: '0.4rem 0.8rem',
+                fontSize: '0.7rem',
+                border: '1px solid transparent',
+                borderColor: selectedCategory === cat ? 'transparent' : 'rgba(255,255,255,0.05)'
+              }}
+            >
+              {cat}
+            </button>
           ))}
         </div>
       </div>
 
       {viewMode === 'grid' ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1.25rem' }}>
           {filteredBooks.map(book => (
             <motion.div 
               layout
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
               key={book.id} 
               className="glass-card hover-scale overflow-hidden" 
-              style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', height: '100%' }}
+              style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', height: '100%', background: 'rgba(30, 41, 59, 0.4)' }}
               onClick={() => setSelectedBook(book)}
             >
-              <div style={{ height: '130px', width: '100%', overflow: 'hidden', position: 'relative', background: '#0f172a' }}>
-                <img src={book.image} alt={book.title} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8 }} />
+              <div style={{ height: '140px', width: '100%', overflow: 'hidden', position: 'relative' }}>
+                <img src={book.image} alt={book.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 <div style={{ position: 'absolute', top: '0.4rem', right: '0.4rem' }}>
                    <span className="badge" style={{ background: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(4px)', fontSize: '0.6rem', padding: '2px 6px' }}>{book.category}</span>
                 </div>
               </div>
               <div className="p-3 flex-1 flex flex-col" style={{ padding: '0.75rem' }}>
                 <h3 style={{ 
-                  fontSize: '0.8rem', 
+                  fontSize: '0.85rem', 
                   fontWeight: '700', 
                   marginBottom: '0.25rem', 
                   lineHeight: '1.2',
@@ -85,17 +114,17 @@ const Home = ({ books, categories }) => {
                   WebkitLineClamp: '2',
                   WebkitBoxOrient: 'vertical',
                   overflow: 'hidden',
-                  height: '1.9rem'
+                  height: '2rem'
                 }}>
                   {book.title}
                 </h3>
-                <p className="text-muted" style={{ fontSize: '0.65rem', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: '0.5rem' }}>{book.author}</p>
+                <p className="text-muted" style={{ fontSize: '0.7rem', marginBottom: '0.75rem' }}>{book.author}</p>
                 
                 <div className="flex items-center justify-between mt-auto pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                   <span style={{ fontSize: '0.65rem', fontWeight: '800', color: book.available_count > 0 ? '#4ade80' : '#f87171' }}>
-                    {book.available_count > 0 ? `${book.available_count} DISP.` : 'AGOTADO'}
+                    {book.available_count > 0 ? `${book.available_count} DISPONIBLES` : 'SIN STOCK'}
                   </span>
-                  <Info size={12} className="text-muted" />
+                  <Info size={14} className="text-muted" />
                 </div>
               </div>
             </motion.div>
@@ -109,28 +138,28 @@ const Home = ({ books, categories }) => {
               onClick={() => setSelectedBook(book)}
               className="hover-card-row"
               style={{ 
-                padding: '1rem 1.5rem', 
+                padding: '0.75rem 1rem', 
                 cursor: 'pointer', 
                 display: 'flex', 
                 alignItems: 'center', 
-                gap: '1.5rem',
+                gap: '1rem',
                 borderBottom: index === filteredBooks.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.05)'
               }}
             >
-              <img src={book.image} alt="" style={{ width: '40px', height: '56px', borderRadius: '4px', objectFit: 'cover' }} />
+              <img src={book.image} alt="" style={{ width: '32px', height: '44px', borderRadius: '4px', objectFit: 'cover' }} />
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: '700', fontSize: '1rem' }}>{book.title}</div>
-                <div className="text-xs text-muted">{book.author}</div>
+                <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{book.title}</div>
+                <div className="text-[10px] text-muted">{book.author}</div>
               </div>
-              <div style={{ display: 'none', md: 'block' }}>
-                <span className="badge" style={{ background: 'rgba(255,255,255,0.05)', fontSize: '0.7rem' }}>{book.category}</span>
+              <div className="hidden sm:block">
+                <span className="badge" style={{ background: 'rgba(255,255,255,0.05)', fontSize: '0.65rem' }}>{book.category}</span>
               </div>
               <div style={{ textAlign: 'right', minWidth: '100px' }}>
-                <div style={{ fontSize: '0.85rem', fontWeight: '700', color: book.available_count > 0 ? '#4ade80' : '#f87171' }}>
-                  {book.available_count > 0 ? `${book.available_count} Disponibles` : 'Sin Stock'}
+                <div style={{ fontSize: '0.75rem', fontWeight: '700', color: book.available_count > 0 ? '#4ade80' : '#f87171' }}>
+                  {book.available_count > 0 ? `${book.available_count} Disp.` : 'Agotado'}
                 </div>
               </div>
-              <Info size={18} className="text-muted" />
+              <Info size={14} className="text-muted" />
             </div>
           ))}
         </div>
