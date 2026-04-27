@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { initialBooks, initialStudents, initialLoans, initialCategories, initialAdmins } from './data';
+import { initialCategories, initialAdmins } from './data';
 import { db, auth } from './firebase';
-import { collection, getDocs, setDoc, doc, writeBatch } from 'firebase/firestore';
+import { collection, getDocs, setDoc, doc } from 'firebase/firestore';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import Home from './pages/Home';
 import AdminDashboard from './pages/AdminDashboard';
@@ -38,7 +38,6 @@ function App() {
   // Fetch all data from Firebase
   useEffect(() => {
     const fetchData = async () => {
-      console.log("Fetching data from Firebase... Auth status:", currentUser ? "Authenticated" : "Guest");
       try {
         const collections = ['books', 'students', 'loans', 'categories', 'admins', 'resource_types'];
         const results = {};
@@ -46,61 +45,35 @@ function App() {
         for (const colName of collections) {
           try {
             const querySnapshot = await getDocs(collection(db, colName));
-            const data = querySnapshot.docs.map(doc => {
-              const docData = doc.data();
-              return { 
-                ...docData, 
-                id: docData.id || doc.id 
-              };
-            });
-            results[colName] = data;
+            results[colName] = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
           } catch (colErr) {
-            console.warn(`Could not fetch ${colName}:`, colErr.message);
             results[colName] = [];
           }
         }
 
-        // Migration Logic
-        const checkAndMigrate = async (key, fireData, initialData) => {
-          if (!fireData || fireData.length === 0) {
-            const localSaved = localStorage.getItem(`library_${key}`);
-            let dataToMigrate = localSaved ? JSON.parse(localSaved) : initialData;
-            
-            if (dataToMigrate && dataToMigrate.length > 0) {
-              console.log(`Migrating ${key} to Firebase...`);
-              const batch = writeBatch(db);
-              dataToMigrate.forEach((item, idx) => {
-                const id = typeof item === 'string' ? item : String(item.id || idx);
-                const itemRef = doc(db, key, id);
-                const dataObject = typeof item === 'object' ? item : { name: item, id: id, code: String(idx + 1).padStart(3, '0') };
-                batch.set(itemRef, dataObject);
-              });
-              await batch.commit();
-              return dataToMigrate;
-            }
-          }
-          return fireData;
-        };
-
-        const finalBooks = await checkAndMigrate('books', results.books, initialBooks);
-        const finalStudents = await checkAndMigrate('students', results.students, initialStudents);
-        const finalLoans = await checkAndMigrate('loans', results.loans, initialLoans);
+        // Direct assignments - No more automatic migration from local files
+        const finalBooks = results.books || [];
+        const finalStudents = results.students || [];
+        const finalLoans = results.loans || [];
         
-        const initialResourceTypes = [
+        const finalResourceTypes = results.resource_types.length > 0 ? results.resource_types : [
           { id: 'book', name: 'Libro / Manual', code: '001' },
           { id: 'equipment', name: 'Equipamiento / Tecnología', code: '002' }
         ];
-        const finalResourceTypes = await checkAndMigrate('resource_types', results.resource_types, initialResourceTypes);
-        const finalCategories = await checkAndMigrate('categories', results.categories, initialCategories);
-        const finalAdmins = await checkAndMigrate('admins', results.admins, initialAdmins);
+
+        const finalCategories = results.categories.length > 0 ? results.categories : initialCategories;
+        const finalAdmins = results.admins.length > 0 ? results.admins : initialAdmins;
 
         setBooks(finalBooks);
         setStudents(finalStudents);
         setLoans(finalLoans);
-        
-        const mappedCategories = (finalCategories || []).map((c, idx) => {
+        setResourceTypes(finalResourceTypes);
+        setAdmins(finalAdmins);
+
+        // Normalize categories to have codes
+        const mappedCategories = finalCategories.map((c, idx) => {
           const item = (c && typeof c === 'object') ? c : { id: `cat_${idx}`, name: String(c || 'Sin Categoría'), code: '001' };
-          const isLegacy = (finalCategories || []).every(cat => !cat || typeof cat === 'string' || !cat.code || cat.code === '001');
+          const isLegacy = finalCategories.every(cat => !cat || typeof cat === 'string' || !cat.code || cat.code === '001');
           const needsNewCode = !item.code || (item.code === '001' && isLegacy);
           return {
             ...item,
@@ -108,10 +81,9 @@ function App() {
           };
         });
         setCategories(mappedCategories);
-        setResourceTypes(finalResourceTypes);
-        setAdmins(finalAdmins);
+
       } catch (error) {
-        console.error("Critical error fetching from Firebase:", error);
+        console.error("Critical error:", error);
       } finally {
         setLoading(false);
       }
@@ -154,7 +126,7 @@ function App() {
       </div>
       <div style={{ textAlign: 'center' }}>
         <h1 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '0.5rem' }}>BiblioUTN</h1>
-        <p style={{ color: '#94a3b8', letterSpacing: '0.1em' }}>CARGANDO BIBLIOTECA...</p>
+        <p style={{ color: '#94a3b8', letterSpacing: '0.1em' }}>CARGANDO...</p>
       </div>
     </div>
   );
@@ -170,14 +142,10 @@ function App() {
             loans={loans}
             onLoanCreated={async (newLoan, loanedBook) => {
               const updatedBook = { ...loanedBook, available_count: (loanedBook.available_count || 1) - 1 };
-              const newLoans = [...loans, newLoan];
-              const newBooks = books.map(b => b.id === loanedBook.id ? updatedBook : b);
-              setLoans(newLoans);
-              setBooks(newBooks);
-              await import('firebase/firestore').then(({ setDoc, doc }) => {
-                setDoc(doc(db, 'loans', String(newLoan.id)), newLoan);
-                setDoc(doc(db, 'books', String(updatedBook.id)), updatedBook);
-              });
+              setLoans([...loans, newLoan]);
+              setBooks(books.map(b => b.id === loanedBook.id ? updatedBook : b));
+              await setDoc(doc(db, 'loans', String(newLoan.id)), newLoan);
+              await setDoc(doc(db, 'books', String(updatedBook.id)), updatedBook);
             }}
           />
         )}
@@ -185,7 +153,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Home books={books} categories={categories} />} />
             <Route path="/info" element={<Info />} />
-            <Route path="/login" element={<LoginPage admins={admins} setCurrentUser={setCurrentUser} />} />
+            <Route path="/login" element={<LoginPage setCurrentUser={setCurrentUser} />} />
             <Route path="/admin" element={<ProtectedRoute><AdminDashboard books={books} students={students} loans={loans} /></ProtectedRoute>} />
             <Route path="/admin/inventory" element={<ProtectedRoute><AdminInventory books={books} setBooks={(nb)=>{setBooks(nb); nb.forEach(b=>syncItem('books',b));}} deleteItem={(id)=>deleteItem('books',id)} categories={categories} resourceTypes={resourceTypes} /></ProtectedRoute>} />
             <Route path="/admin/loans" element={<ProtectedRoute><AdminLoans loans={loans} setLoans={(nl)=>{setLoans(nl); nl.forEach(l=>syncItem('loans',l));}} deleteLoan={(id)=>deleteItem('loans',id)} books={books} setBooks={(nb)=>{setBooks(nb); nb.forEach(b=>syncItem('books',b));}} students={students} /></ProtectedRoute>} />
