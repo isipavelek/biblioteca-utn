@@ -151,7 +151,8 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
 
     setIsGrouping(true);
     try {
-      const { writeBatch, doc, db } = await import('../firebase');
+      const { writeBatch, doc } = await import('firebase/firestore');
+      const { db } = await import('../firebase');
       const batch = writeBatch(db);
       
       const groups = {}; // key: title|author|catCode
