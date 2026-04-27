@@ -135,20 +135,20 @@ const AdminCategories = ({ categories = [], setCategories, updateCategory, delet
         <button onClick={() => setActiveTab('types')} style={{ background: 'none', color: activeTab === 'types' ? 'var(--primary)' : 'var(--text-muted)', fontWeight: '700', padding: '0.8rem 1rem', cursor: 'pointer' }}>Tipos</button>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+      <div className="flex justify-between items-center mb-6 mobile-stack">
         <div>
           <h1 style={{ fontSize: '1.8rem', margin: 0 }}>{activeTab === 'categories' ? 'Categorías' : 'Tipos'}</h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{currentList.length} registrados</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }} className="mobile-hide">{currentList.length} registrados en el sistema</p>
         </div>
-        <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <button className="glass-card" onClick={resetToOfficialCategories} disabled={cleaning} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', fontSize: '0.8rem', color: '#f87171' }}>
-            <Database size={16} /> Reset Oficial
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }} className="w-full">
+          <button className="glass-card flex-1" onClick={resetToOfficialCategories} disabled={cleaning} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', padding: '0.6rem 0.8rem', fontSize: '0.75rem', color: '#f87171' }}>
+            <Database size={14} /> <span className="mobile-hide">Reset Oficial</span><span className="sm:hidden">Reset</span>
           </button>
-          <button className="glass-card" onClick={() => syncInventoryCodes()} disabled={cleaning} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', fontSize: '0.8rem', color: '#6366f1' }}>
-            <RefreshCcw size={16} /> {cleaning ? '...' : 'Sincronizar'}
+          <button className="glass-card flex-1" onClick={() => syncInventoryCodes()} disabled={cleaning} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', padding: '0.6rem 0.8rem', fontSize: '0.75rem', color: '#6366f1' }}>
+            <RefreshCcw size={14} /> <span className="mobile-hide">Sincronizar</span><span className="sm:hidden">Sinc</span>
           </button>
-          <button className="btn-primary" onClick={() => handleOpenModal()} style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }}>
-            <Plus size={16} /> Nuevo
+          <button className="btn-primary flex-1" onClick={() => handleOpenModal()} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', padding: '0.6rem 0.8rem', fontSize: '0.75rem' }}>
+            <Plus size={14} /> Nuevo
           </button>
         </div>
       </div>
@@ -165,11 +165,13 @@ const AdminCategories = ({ categories = [], setCategories, updateCategory, delet
           <tbody>
             {currentList.map((item, idx) => item && (
               <tr key={item.id || idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                <td style={{ padding: '1rem' }}><code style={{ color: 'var(--primary)' }}>{item.code || '---'}</code></td>
-                <td style={{ padding: '1rem', fontWeight: '600' }}>{item.name || '---'}</td>
-                <td style={{ padding: '1rem', textAlign: 'right' }}>
-                  <button onClick={() => handleOpenModal(item)} style={{ background: 'none', color: 'var(--text-muted)', marginRight: '0.5rem' }}><Edit size={16} /></button>
-                  <button onClick={() => setDeleteConfirm({ isOpen: true, item })} style={{ background: 'none', color: '#f87171' }}><Trash2 size={16} /></button>
+                <td data-label="Código" style={{ padding: '1rem' }} className="mobile-text-right"><code style={{ color: 'var(--primary)' }}>{item.code || '---'}</code></td>
+                <td data-label="Nombre" style={{ padding: '1rem', fontWeight: '600' }} className="mobile-text-right">{item.name || '---'}</td>
+                <td data-label="Acciones" style={{ padding: '1rem', textAlign: 'right' }}>
+                  <div className="flex justify-end gap-2">
+                    <button onClick={() => handleOpenModal(item)} style={{ background: 'rgba(255,255,255,0.03)', color: 'var(--text-muted)', padding: '0.4rem', borderRadius: '0.4rem' }}><Edit size={16} /></button>
+                    <button onClick={() => setDeleteConfirm({ isOpen: true, item })} style={{ background: 'rgba(248,113,113,0.05)', color: '#f87171', padding: '0.4rem', borderRadius: '0.4rem' }}><Trash2 size={16} /></button>
+                  </div>
                 </td>
               </tr>
             ))}
