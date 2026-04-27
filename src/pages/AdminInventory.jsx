@@ -169,6 +169,11 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
         const newBooksList = [...books];
         let importedCount = 0;
 
+        const normalizeStr = (s) => 
+          String(s || '').toLowerCase().trim()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Accents
+            .replace(/[^a-z0-z0-9]/g, ''); // Only alphanumeric
+
         jsonData.forEach((row, index) => {
           // Normalize row keys - very flexible
           const getVal = (keys) => {
@@ -199,16 +204,30 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
           const catName = String(getVal(['Categoría', 'Categoria', 'Category', 'Tema', 'Materia', 'Area']) || 'GENERAL').toUpperCase().trim();
           const editorial = getVal(['Editorial', 'Publisher', 'Edicion']) || '';
           const total = parseInt(getVal(['Cantidad', 'Stock', 'Total', 'Ejemplares', 'Unidades'])) || 1;
-          const typeName = String(getVal(['Tipo', 'Type', 'Recurso']) || 'Libro').toLowerCase();
+          const typeName = normalizeStr(getVal(['Tipo', 'Type', 'Recurso']) || 'Libro');
 
-          // Match category
-          const catObj = categories.find(c => c.name.toUpperCase().trim() === catName) || 
-                         categories.find(c => catName.includes(c.name.toUpperCase().trim())) ||
-                         categories.find(c => c.name === 'GENERAL') || 
-                         categories[0];
+          // Match category - SUPER FUZZY
+          const normCatExcel = normalizeStr(catName);
+          
+          let catObj = categories.find(c => normalizeStr(c.name) === normCatExcel) || 
+                       categories.find(c => normCatExcel.includes(normalizeStr(c.name))) ||
+                       categories.find(c => normalizeStr(c.name).includes(normCatExcel));
+          
+          // Special cases for common typos provided by user
+          if (!catObj) {
+            if (normCatExcel.includes('literarura') || normCatExcel.includes('literaruta')) {
+              catObj = categories.find(c => normalizeStr(c.name).includes('literatura'));
+            } else if (normCatExcel.includes('matematicas')) {
+              catObj = categories.find(c => normalizeStr(c.name).includes('matematica'));
+            }
+          }
+
+          if (!catObj) {
+            catObj = categories.find(c => c.name === 'GENERAL') || categories[0];
+          }
 
           // Match type
-          const typeObj = resourceTypes.find(t => t.name.toLowerCase().includes(typeName)) || resourceTypes[0];
+          const typeObj = resourceTypes.find(t => normalizeStr(t.name).includes(typeName)) || resourceTypes[0];
 
           // Calculate next itemCode
           const sameGroupItems = newBooksList.filter(b => b.typeCode === typeObj.code && b.categoryCode === catObj.code);
