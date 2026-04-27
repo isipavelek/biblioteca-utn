@@ -33,7 +33,7 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
     image: ''
   });
 
-  const compressImage = (file) => {
+  const compressImageToBase64 = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
@@ -47,7 +47,7 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
           let width = img.width;
           let height = img.height;
           
-          const MAX_SIZE = 800; 
+          const MAX_SIZE = 600; // Reducimos a 600px para que el texto base64 no sea gigante
           if (width > height) {
             if (width > MAX_SIZE) {
               height *= MAX_SIZE / width;
@@ -65,10 +65,9 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, width, height);
           
-          canvas.toBlob((blob) => {
-            if (blob) resolve(blob);
-            else reject("Error al generar blob");
-          }, 'image/jpeg', 0.7);
+          // Calidad 0.6 para asegurar que quepa holgadamente en Firestore (limite 1MB por documento)
+          const base64 = canvas.toDataURL('image/jpeg', 0.6);
+          resolve(base64);
         };
       };
     });
@@ -81,19 +80,13 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
     try {
       setIsUploading(true);
       
-      const compressedBlob = await compressImage(file);
+      // Convertimos a Base64 directamente (Evitamos CORS de Firebase Storage)
+      const base64Image = await compressImageToBase64(file);
       
-      const fileName = `${Date.now()}_book.jpg`;
-      const storageRef = ref(storage, `book-covers/${fileName}`);
-      
-      // Intentar subir
-      const uploadResult = await uploadBytes(storageRef, compressedBlob);
-      const downloadURL = await getDownloadURL(uploadResult.ref);
-      
-      setFormData(prev => ({ ...prev, image: downloadURL }));
+      setFormData(prev => ({ ...prev, image: base64Image }));
     } catch (error) {
       console.error("Error completo:", error);
-      alert("Error: " + (error.message || error || "Fallo en la subida"));
+      alert("Error: " + (error.message || error || "Fallo al procesar la imagen"));
     } finally {
       setIsUploading(false);
     }
