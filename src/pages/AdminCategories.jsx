@@ -12,6 +12,54 @@ const AdminCategories = ({ categories, setCategories, resourceTypes, setResource
   const [formData, setFormData] = useState({ name: '', code: '' });
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null });
   const [cleaning, setCleaning] = useState(false);
+  
+  const syncInventoryCodes = async () => {
+    if (!window.confirm("¿Deseas sincronizar todos los códigos del inventario? Esto actualizará los códigos de todos los libros para que coincidan con las categorías y tipos actuales.")) return;
+    
+    setCleaning(true);
+    try {
+      const { getDocs, collection, writeBatch, doc } = await import('firebase/firestore');
+      const booksSnap = await getDocs(collection(db, 'books'));
+      const batch = writeBatch(db);
+      let count = 0;
+
+      booksSnap.docs.forEach(d => {
+        const book = d.data();
+        const catObj = categories.find(c => c.name === book.category);
+        const typeObj = resourceTypes.find(t => t.id === book.type || t.name === book.type);
+        
+        let changed = false;
+        const updatedBook = { ...book };
+        
+        if (catObj && book.categoryCode !== catObj.code) {
+          updatedBook.categoryCode = catObj.code;
+          changed = true;
+        }
+        if (typeObj && book.typeCode !== typeObj.code) {
+          updatedBook.typeCode = typeObj.code;
+          changed = true;
+        }
+
+        if (changed) {
+          batch.update(doc(db, 'books', d.id), updatedBook);
+          count++;
+        }
+      });
+
+      if (count > 0) {
+        await batch.commit();
+        alert(`Sincronización completada. Se actualizaron ${count} elementos. Recarga la página para ver los cambios.`);
+        window.location.reload();
+      } else {
+        alert("Todos los códigos ya están sincronizados correctamente.");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Error durante la sincronización.");
+    } finally {
+      setCleaning(false);
+    }
+  };
 
   const handleOpenModal = (item = null) => {
     if (item) {
@@ -106,13 +154,23 @@ const AdminCategories = ({ categories, setCategories, resourceTypes, setResource
             {currentList.length} elementos registrados
           </p>
         </div>
-        <button
-          className="btn-primary"
-          onClick={() => handleOpenModal()}
-          style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', fontSize: '0.85rem' }}
-        >
-          <Plus size={16} /> Nuevo {activeTab === 'categories' ? 'Categoría' : 'Tipo'}
-        </button>
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <button
+            className="glass-card"
+            onClick={syncInventoryCodes}
+            disabled={cleaning}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', fontSize: '0.85rem', color: '#6366f1', borderColor: 'rgba(99, 102, 241, 0.3)' }}
+          >
+            <Eraser size={16} /> {cleaning ? 'Sincronizando...' : 'Limpiar Códigos Inventario'}
+          </button>
+          <button
+            className="btn-primary"
+            onClick={() => handleOpenModal()}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', fontSize: '0.85rem' }}
+          >
+            <Plus size={16} /> Nuevo {activeTab === 'categories' ? 'Categoría' : 'Tipo'}
+          </button>
+        </div>
       </div>
 
       {/* List */}
