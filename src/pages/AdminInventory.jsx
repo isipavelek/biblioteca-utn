@@ -10,6 +10,7 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
   const [editingBook, setEditingBook] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null });
   const [deleteAllConfirm, setDeleteAllConfirm] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
@@ -147,7 +148,95 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    alert("Funcionalidad de importación en revisión para adaptarse a los nuevos códigos.");
+
+    setIsImporting(true);
+    const reader = new FileReader();
+    
+    reader.onload = (event) => {
+      try {
+        const data = new Uint8Array(event.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+        if (jsonData.length === 0) {
+          alert("El archivo está vacío.");
+          setIsImporting(false);
+          return;
+        }
+
+        const newBooksList = [...books];
+        let importedCount = 0;
+
+        jsonData.forEach((row, index) => {
+          // Normalize row keys
+          const getVal = (keys) => {
+            const key = keys.find(k => row[k] !== undefined || row[k.toLowerCase()] !== undefined || row[k.toUpperCase()] !== undefined);
+            return row[key] || row[key?.toLowerCase()] || row[key?.toUpperCase()] || '';
+          };
+
+          const title = getVal(['Título', 'Titulo', 'Title', 'Nombre']);
+          if (!title) return;
+
+          const author = getVal(['Autor', 'Author']) || 'Desconocido';
+          const catName = String(getVal(['Categoría', 'Categoria', 'Category', 'Tema']) || 'GENERAL').toUpperCase().trim();
+          const editorial = getVal(['Editorial', 'Publisher']) || '';
+          const total = parseInt(getVal(['Cantidad', 'Stock', 'Total'])) || 1;
+          const typeName = String(getVal(['Tipo', 'Type']) || 'Libro').toLowerCase();
+
+          // Match category
+          const catObj = categories.find(c => c.name.toUpperCase().trim() === catName) || 
+                         categories.find(c => catName.includes(c.name.toUpperCase().trim())) ||
+                         categories.find(c => c.name === 'GENERAL') || 
+                         categories[0];
+
+          // Match type
+          const typeObj = resourceTypes.find(t => t.name.toLowerCase().includes(typeName)) || resourceTypes[0];
+
+          // Calculate next itemCode
+          const sameGroupItems = newBooksList.filter(b => b.typeCode === typeObj.code && b.categoryCode === catObj.code);
+          const lastCode = sameGroupItems.reduce((acc, b) => {
+            const start = parseInt(b.itemCode) || 0;
+            const count = parseInt(b.total_count) || 1;
+            return Math.max(acc, start + count - 1);
+          }, 0);
+
+          const nextItemCode = String(lastCode + 1).padStart(3, '0');
+
+          const newBook = {
+            id: Date.now() + index,
+            title,
+            author,
+            category: catObj.name,
+            categoryCode: catObj.code,
+            type: typeObj.id,
+            typeCode: typeObj.code,
+            itemCode: nextItemCode,
+            total_count: total,
+            available_count: total,
+            editorial,
+            description: getVal(['Descripción', 'Descripcion', 'Description']) || '',
+            institutionalType: getVal(['Tipo Inst', 'Institutional Type']) || 'MANUAL',
+            image: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=400'
+          };
+
+          newBooksList.push(newBook);
+          importedCount++;
+        });
+
+        setBooks(newBooksList);
+        alert(`¡Éxito! Se importaron ${importedCount} elementos correctamente.`);
+      } catch (err) {
+        console.error(err);
+        alert("Error al procesar el archivo Excel. Asegúrate de que el formato sea correcto.");
+      } finally {
+        setIsImporting(false);
+        e.target.value = ''; // Reset input
+      }
+    };
+
+    reader.readAsArrayBuffer(file);
   };
 
   const filteredBooks = (books || []).filter(b => 
@@ -173,8 +262,8 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
           <button className="glass-card" onClick={handleDeleteAll} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', color: '#f87171', borderColor: 'rgba(239, 68, 68, 0.2)' }}>
             <Trash2 size={20} /> Borrar Todo
           </button>
-          <button className="glass-card" onClick={() => fileInputRef.current.click()} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', color: '#4ade80' }}>
-            <FileSpreadsheet size={20} /> Importar Biblioteca
+          <button className="glass-card" onClick={() => fileInputRef.current.click()} disabled={isImporting} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', color: '#4ade80' }}>
+            <FileSpreadsheet size={20} /> {isImporting ? 'Importando...' : 'Importar Biblioteca'}
           </button>
           <input type="file" ref={fileInputRef} style={{ display: 'none' }} accept=".xlsx, .xls" onChange={handleFileChange} />
         </div>
