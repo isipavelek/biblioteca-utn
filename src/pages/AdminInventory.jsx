@@ -123,19 +123,28 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
     setIsModalOpen(false);
   };
 
+  const handleDelete = (id) => {
+    setDeleteConfirm({ isOpen: true, id });
+  };
+
+  const confirmDelete = () => {
+    deleteItem(deleteConfirm.id);
+    setDeleteConfirm({ isOpen: false, id: null });
+  };
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    // (Import logic remains similar but should handle codes if possible)
-    // For now, I'll keep the existing import logic but ensure it defaults to the new structure
     alert("Funcionalidad de importación en revisión para adaptarse a los nuevos códigos.");
   };
 
-  const filteredBooks = books.filter(b => 
-    b.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    b.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (b.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    getFullCodeRange(b).includes(searchTerm)
+  const filteredBooks = (books || []).filter(b => 
+    b && (
+      (b?.title || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+      (b?.author || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (b?.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      getFullCodeRange(b).includes(searchTerm)
+    )
   );
 
   return (
@@ -181,7 +190,7 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
             </tr>
           </thead>
           <tbody>
-            {filteredBooks.map(item => (
+            {filteredBooks.map(item => item && (
               <tr key={item.id} className="hover-card-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', transition: 'background 0.2s' }}>
                 <td style={{ padding: '0.75rem 1rem' }}>
                   <code style={{ 
