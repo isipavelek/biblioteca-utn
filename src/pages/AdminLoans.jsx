@@ -467,7 +467,7 @@ const AdminLoans = ({ loans, setLoans, books, setBooks, students, deleteLoan, up
           padding: '1rem' 
         }}>
           <div onClick={() => setIsModalOpen(false)} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 1 }} />
-          <div className="glass-card" style={{ maxWidth: '500px', width: '100%', padding: '2.5rem', position: 'relative', zIndex: 2, background: '#1e293b' }}>
+          <div className="glass-card" style={{ maxWidth: '500px', width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: '2.5rem', position: 'relative', zIndex: 2, background: '#1e293b' }}>
             <h2 style={{ marginBottom: '2rem', fontSize: '1.5rem', fontWeight: 'bold' }}>Registrar Préstamo</h2>
             <form onSubmit={handleCreateLoan}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -539,7 +539,7 @@ const AdminLoans = ({ loans, setLoans, books, setBooks, students, deleteLoan, up
           padding: '1rem' 
         }}>
           <div onClick={() => setIsReturnModalOpen(false)} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 1 }} />
-          <div className="glass-card" style={{ maxWidth: '500px', width: '100%', padding: '2.5rem', position: 'relative', zIndex: 2, background: '#1e293b' }}>
+          <div className="glass-card" style={{ maxWidth: '450px', width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: '2rem', position: 'relative', zIndex: 2, background: '#1e293b' }}>
             <div className="flex justify-between items-center mb-8" style={{ marginBottom: '1.5rem' }}>
               <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>Confirmar Devolución</h2>
               <button onClick={() => setIsReturnModalOpen(false)} style={{ background: 'none', color: 'var(--text-muted)' }}><X /></button>

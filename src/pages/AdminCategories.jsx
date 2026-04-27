@@ -182,7 +182,7 @@ const AdminCategories = ({ categories = [], setCategories, updateCategory, delet
       {isModalOpen && createPortal(
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div onClick={() => setIsModalOpen(false)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.8)' }} />
-          <div className="glass-card" style={{ position: 'relative', width: '350px', padding: '2rem', background: '#1e293b' }}>
+          <div className="glass-card" style={{ position: 'relative', width: '350px', maxHeight: '90vh', overflowY: 'auto', padding: '2rem', background: '#1e293b' }}>
             <h2 style={{ marginBottom: '1.5rem' }}>{editingItem ? 'Editar' : 'Nuevo'}</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <input className="input-field" placeholder="Código" maxLength="3" value={formData.code} onChange={e => setFormData({...formData, code: e.target.value.replace(/\D/g,'')})} />
