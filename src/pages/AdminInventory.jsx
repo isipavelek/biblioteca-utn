@@ -69,6 +69,17 @@ const AdminInventory = ({ books, setBooks, categories, deleteItem }) => {
     return `${t}${c}${i}`;
   };
 
+  const getFullCodeRange = (item) => {
+    const base = getBaseCode(item);
+    if (item.total_count > 1) {
+      const start = parseInt(item.itemCode || '1');
+      const end = start + (parseInt(item.total_count) || 1) - 1;
+      const endStr = String(end).padStart(3, '0');
+      return `${base} - ${endStr}`;
+    }
+    return base;
+  };
+
   const handleOpenModal = (book = null) => {
     if (book) {
       setEditingBook(book);
@@ -79,7 +90,14 @@ const AdminInventory = ({ books, setBooks, categories, deleteItem }) => {
       });
     } else {
       setEditingBook(null);
-      const lastCode = books.length > 0 ? Math.max(...books.map(b => parseInt(b.itemCode) || 0)) : 0;
+      // Calculate next code based on total physical copies
+      const totalPhysicalCopies = books.reduce((acc, b) => {
+        // Find the highest "end" code among all books
+        const start = parseInt(b.itemCode) || 0;
+        const count = parseInt(b.total_count) || 1;
+        return Math.max(acc, start + count - 1);
+      }, 0);
+      
       setFormData({
         title: '',
         author: '',
@@ -91,7 +109,7 @@ const AdminInventory = ({ books, setBooks, categories, deleteItem }) => {
         institutionalType: 'MANUAL',
         typeCode: '001',
         categoryCode: '001',
-        itemCode: (lastCode + 1).toString().padStart(3, '0'),
+        itemCode: (totalPhysicalCopies + 1).toString().padStart(3, '0'),
         image: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=400'
       });
     }
@@ -193,7 +211,7 @@ const AdminInventory = ({ books, setBooks, categories, deleteItem }) => {
     b.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (b.category || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (b.editorial && b.editorial.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    getBaseCode(b).includes(searchTerm)
+    getFullCodeRange(b).includes(searchTerm)
   );
 
   return (
@@ -242,8 +260,16 @@ const AdminInventory = ({ books, setBooks, categories, deleteItem }) => {
             {filteredBooks.map(item => (
               <tr key={item.id} className="hover-card-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', transition: 'background 0.2s' }}>
                 <td style={{ padding: '0.75rem 1rem' }}>
-                  <code style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--primary)', padding: '0.3rem 0.6rem', borderRadius: '6px', fontSize: '0.8rem', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
-                    {getBaseCode(item)}
+                  <code style={{ 
+                    background: 'rgba(255,255,255,0.05)', 
+                    color: 'var(--primary)', 
+                    padding: '0.3rem 0.6rem', 
+                    borderRadius: '6px', 
+                    fontSize: '0.75rem', 
+                    border: '1px solid rgba(99, 102, 241, 0.2)',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {getFullCodeRange(item)}
                   </code>
                 </td>
                 <td style={{ padding: '1rem 1.5rem' }}>
