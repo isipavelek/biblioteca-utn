@@ -229,6 +229,14 @@ button {
   .nav-links {
     gap: 1rem !important;
   }
+
+  .mobile-justify-end {
+    justify-content: flex-end !important;
+  }
+
+  .mobile-text-right {
+    text-align: right !important;
+  }
 }
 
 /* Dashboard & Grid Utilities */

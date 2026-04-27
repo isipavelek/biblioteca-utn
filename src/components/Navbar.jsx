@@ -32,11 +32,6 @@ const Navbar = ({ currentUser, onLogout }) => {
           <Library size={20} />
         </div>
         <span style={{ fontSize: '1.1rem', fontWeight: '700' }}>BiblioUTN</span>
-        {currentUser && (
-          <span style={{ fontSize: '0.7rem', color: '#4ade80', marginLeft: '0.5rem', background: 'rgba(74, 222, 128, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>
-            Live Sync
-          </span>
-        )}
       </Link>
 
       <div className="nav-links" style={{ display: 'flex', gap: '1.5rem', marginLeft: 'auto' }}>

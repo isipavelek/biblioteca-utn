@@ -371,7 +371,7 @@ const AdminStudents = ({ students, setStudents, deleteStudent, updateStudent, lo
               {filteredStudents.map(student => (
                 <tr key={student.id} className="hover-card-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', transition: 'background 0.2s' }}>
                   <td data-label="Usuario" style={{ padding: '0.75rem 1rem' }}>
-                    <div className="flex items-center gap-3" style={{ justifyContent: 'flex-end' }}>
+                    <div className="flex items-center gap-3 mobile-justify-end">
                       <div className="mobile-hide" style={{ 
                         background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
                         width: '32px', height: '32px', borderRadius: '50%',
@@ -380,7 +380,7 @@ const AdminStudents = ({ students, setStudents, deleteStudent, updateStudent, lo
                       }}>
                         {(student.lastName || student.name || '?')[0].toUpperCase()}
                       </div>
-                      <div style={{ textAlign: 'right' }}>
+                      <div className="mobile-text-right">
                         <div style={{ fontWeight: '600' }}>
                           {student.lastName ? `${student.lastName}, ${student.firstName}` : (student.name || 'Sin Nombre')}
                         </div>
@@ -389,7 +389,7 @@ const AdminStudents = ({ students, setStudents, deleteStudent, updateStudent, lo
                     </div>
                   </td>
                   <td data-label="Curso/Rol" style={{ padding: '1rem 1.5rem' }}>
-                    <div className="flex flex-col gap-1" style={{ textAlign: 'right' }}>
+                    <div className="flex flex-col gap-1 mobile-text-right">
                       <div style={{ fontSize: '0.875rem' }}>{student.grade || '---'}</div>
                       <div style={{ 
                         fontSize: '0.65rem', 
@@ -412,16 +412,16 @@ const AdminStudents = ({ students, setStudents, deleteStudent, updateStudent, lo
                         ? loans.filter(l => l.studentId === student.id && l.status === 'active')
                         : [];
                       if (activeLoans.length === 0) {
-                        return <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Sin préstamos</span>;
+                        return <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }} className="mobile-text-right">Sin préstamos</span>;
                       }
                       return (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', alignItems: 'flex-end' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }} className="mobile-justify-end">
                           {activeLoans.map(loan => {
                             const due = loan.dueDate ? new Date(loan.dueDate) : null;
                             const overdue = due && due < today;
                             const book = books ? books.find(b => String(b.id) === String(loan.bookId)) : null;
                             return (
-                              <div key={loan.id} style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
+                              <div key={loan.id} style={{ display: 'flex', alignItems: 'center', gap: '4px' }} className="mobile-justify-end">
                                 <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: overdue ? '#f87171' : '#4ade80', flexShrink: 0 }} />
                                 <span style={{ fontSize: '0.7rem', color: overdue ? '#f87171' : 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '130px' }}>
                                   {book?.title?.slice(0, 18) || 'Libro'}
@@ -437,16 +437,16 @@ const AdminStudents = ({ students, setStudents, deleteStudent, updateStudent, lo
                       );
                     })()}
                   </td>
-                  <td data-label="Documento" style={{ padding: '0.75rem 1rem', fontSize: '0.875rem', color: 'var(--text-muted)', textAlign: 'right' }}>
+                  <td data-label="Documento" style={{ padding: '0.75rem 1rem', fontSize: '0.875rem', color: 'var(--text-muted)' }} className="mobile-text-right">
                     {student.dniType}: {student.dni || '---'}
                   </td>
                   <td data-label="Contacto" style={{ padding: '1rem 1.5rem' }}>
-                    <div className="flex flex-col gap-1" style={{ textAlign: 'right' }}>
-                      <div className="flex items-center gap-2" style={{ fontSize: '0.8rem', justifyContent: 'flex-end' }}>
+                    <div className="flex flex-col gap-1 mobile-text-right">
+                      <div className="flex items-center gap-2 mobile-justify-end" style={{ fontSize: '0.8rem' }}>
                         <Mail size={12} className="text-muted mobile-hide" />
                         <span>{student.instEmail || student.email || '---'}</span>
                       </div>
-                      <div className="flex items-center gap-2" style={{ fontSize: '0.8rem', justifyContent: 'flex-end' }}>
+                      <div className="flex items-center gap-2 mobile-justify-end" style={{ fontSize: '0.8rem' }}>
                         <Phone size={12} className="text-muted mobile-hide" />
                         <span>{student.cellphone || student.phone || '---'}</span>
                       </div>

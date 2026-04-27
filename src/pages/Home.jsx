@@ -46,46 +46,44 @@ const Home = ({ books, categories }) => {
           </div>
         </div>
 
-        <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-          <button
-            onClick={() => setSelectedCategory('All')}
-            className="badge"
-            style={{
-              background: selectedCategory === 'All' ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
-              color: selectedCategory === 'All' ? 'white' : 'var(--text-muted)',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              padding: '0.4rem 0.8rem',
-              fontSize: '0.7rem',
-              border: '1px solid transparent',
-              borderColor: selectedCategory === 'All' ? 'transparent' : 'rgba(255,255,255,0.05)'
-            }}
+        <div className="flex gap-2 items-center mobile-stack w-full" style={{ justifyContent: 'flex-end' }}>
+          <select 
+            className="input-field" 
+            style={{ height: '36px', fontSize: '0.85rem', maxWidth: '200px', background: 'rgba(0,0,0,0.2)', padding: '0 0.75rem' }}
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
           >
-            Todos
-          </button>
-          {/* Deduplicate category names for the filter bar with defensive null checks */}
-          {[...new Set((categories || []).map(c => {
-            if (!c) return 'General';
-            return typeof c === 'object' ? (c.name || 'General') : c;
-          }))].sort().map(catName => (
-            <button
-              key={catName}
-              onClick={() => setSelectedCategory(catName)}
-              className="badge"
-              style={{
-                background: selectedCategory === catName ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
-                color: selectedCategory === catName ? 'white' : 'var(--text-muted)',
-                cursor: 'pointer',
+            <option value="All" style={{ background: '#1e293b' }}>📚 Todas las categorías</option>
+            {[...new Set((categories || []).map(c => {
+              if (!c) return 'General';
+              return typeof c === 'object' ? (c.name || 'General') : c;
+            }))].sort().map(catName => (
+              <option key={catName} value={catName} style={{ background: '#1e293b' }}>{catName}</option>
+            ))}
+          </select>
+          {(selectedCategory !== 'All' || searchTerm !== '') && (
+            <button 
+              onClick={() => { setSelectedCategory('All'); setSearchTerm(''); }}
+              className="mobile-full"
+              style={{ 
+                background: 'rgba(239, 68, 68, 0.1)', 
+                color: '#f87171', 
+                padding: '0 0.75rem 1.2rem', 
+                borderRadius: '0.6rem', 
+                fontSize: '0.75rem', 
+                fontWeight: '600',
                 whiteSpace: 'nowrap',
-                padding: '0.4rem 0.8rem',
-                fontSize: '0.7rem',
-                border: '1px solid transparent',
-                borderColor: selectedCategory === catName ? 'transparent' : 'rgba(255,255,255,0.05)'
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.4rem',
+                height: '36px',
+                border: '1px solid rgba(239, 68, 68, 0.2)'
               }}
             >
-              {catName}
+              <XCircle size={14} /> Limpiar Filtros
             </button>
-          ))}
+          )}
         </div>
       </div>
 
