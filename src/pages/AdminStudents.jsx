@@ -14,6 +14,7 @@ const AdminStudents = ({ students, setStudents, deleteStudent, loans = [], books
   const [filterCourse, setFilterCourse] = useState('all');
   const [filterLoans, setFilterLoans] = useState('all'); // all | active | overdue | none
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null });
+  const [deleteAllConfirm, setDeleteAllConfirm] = useState(false);
   const fileInputRef = useRef(null);
   
   const [formData, setFormData] = useState({
@@ -136,6 +137,23 @@ const AdminStudents = ({ students, setStudents, deleteStudent, loans = [], books
     }
   };
 
+  const confirmDeleteAll = async () => {
+    try {
+      const { writeBatch, doc, db } = await import('../firebase');
+      const batch = writeBatch(db);
+      students.forEach(s => {
+        batch.delete(doc(db, 'students', String(s.id)));
+      });
+      await batch.commit();
+      setStudents([]);
+      setDeleteAllConfirm(false);
+    } catch (err) {
+      console.error("Error deleting all students:", err);
+      setStudents([]);
+      setDeleteAllConfirm(false);
+    }
+  };
+
   const parseCourse = (rawCourse) => {
     if (!rawCourse) return '1°A';
     const text = String(rawCourse);
@@ -251,7 +269,10 @@ const AdminStudents = ({ students, setStudents, deleteStudent, loans = [], books
           <p className="text-muted text-sm mt-2">Personal y Alumnado de la institución</p>
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
-          <button onClick={handleCleanDuplicates} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', borderRadius: '0.75rem', background: 'rgba(239, 68, 68, 0.1)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+          <button onClick={() => setDeleteAllConfirm(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', borderRadius: '0.75rem', background: 'rgba(239, 68, 68, 0.1)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+            <Trash2 size={20} /> Borrar Todo
+          </button>
+          <button onClick={handleCleanDuplicates} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', borderRadius: '0.75rem', background: 'rgba(99, 102, 241, 0.1)', color: '#6366f1', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
             <Trash2 size={20} /> Limpiar Duplicados
           </button>
           <button className="btn-primary" onClick={() => handleOpenModal()} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -630,6 +651,15 @@ const AdminStudents = ({ students, setStudents, deleteStudent, loans = [], books
         onConfirm={confirmDelete}
         title="¿Eliminar registro?"
         message="¿Estás seguro de que deseas eliminar este usuario? Esta acción es permanente."
+      />
+
+      <ConfirmDialog 
+        isOpen={deleteAllConfirm}
+        onClose={() => setDeleteAllConfirm(false)}
+        onConfirm={confirmDeleteAll}
+        title="⚠️ ¿ELIMINAR TODOS LOS USUARIOS?"
+        message="Esta acción borrará ABSOLUTAMENTE TODOS los registros de alumnos y personal. ¿Estás seguro?"
+        confirmText="SÍ, BORRAR TODO"
       />
     </div>
   );
