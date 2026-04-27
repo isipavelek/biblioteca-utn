@@ -170,20 +170,36 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
         let importedCount = 0;
 
         jsonData.forEach((row, index) => {
-          // Normalize row keys
+          // Normalize row keys - very flexible
           const getVal = (keys) => {
-            const key = keys.find(k => row[k] !== undefined || row[k.toLowerCase()] !== undefined || row[k.toUpperCase()] !== undefined);
-            return row[key] || row[key?.toLowerCase()] || row[key?.toUpperCase()] || '';
+            const allKeys = Object.keys(row);
+            const foundKey = allKeys.find(k => {
+              const normalizedK = k.toString().toLowerCase().trim()
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Remove accents
+              return keys.some(target => {
+                const normalizedTarget = target.toLowerCase().trim()
+                  .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                return normalizedK === normalizedTarget || normalizedK.includes(normalizedTarget);
+              });
+            });
+            return foundKey ? row[foundKey] : null;
           };
 
-          const title = getVal(['Título', 'Titulo', 'Title', 'Nombre']);
-          if (!title) return;
+          // Try to get title with many aliases
+          let title = getVal(['Título', 'Titulo', 'Title', 'Nombre', 'Libro', 'Manual', 'Equipo', 'Producto', 'Item', 'Ejemplar', 'Descripcion']);
+          
+          // Fallback: if we found nothing but there is data, use the first column
+          if (!title && Object.keys(row).length > 0) {
+            title = row[Object.keys(row)[0]];
+          }
 
-          const author = getVal(['Autor', 'Author']) || 'Desconocido';
-          const catName = String(getVal(['Categoría', 'Categoria', 'Category', 'Tema']) || 'GENERAL').toUpperCase().trim();
-          const editorial = getVal(['Editorial', 'Publisher']) || '';
-          const total = parseInt(getVal(['Cantidad', 'Stock', 'Total'])) || 1;
-          const typeName = String(getVal(['Tipo', 'Type']) || 'Libro').toLowerCase();
+          if (!title || String(title).trim() === '') return;
+
+          const author = getVal(['Autor', 'Author', 'Escritor', 'Responsable']) || 'Desconocido';
+          const catName = String(getVal(['Categoría', 'Categoria', 'Category', 'Tema', 'Materia', 'Area']) || 'GENERAL').toUpperCase().trim();
+          const editorial = getVal(['Editorial', 'Publisher', 'Edicion']) || '';
+          const total = parseInt(getVal(['Cantidad', 'Stock', 'Total', 'Ejemplares', 'Unidades'])) || 1;
+          const typeName = String(getVal(['Tipo', 'Type', 'Recurso']) || 'Libro').toLowerCase();
 
           // Match category
           const catObj = categories.find(c => c.name.toUpperCase().trim() === catName) || 
