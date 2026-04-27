@@ -121,6 +121,7 @@ const AdminLoans = ({ loans, setLoans, books, setBooks, students, deleteLoan }) 
   const [observations, setObservations] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null });
+  const [deleteAllConfirm, setDeleteAllConfirm] = useState(false);
   
   const [formData, setFormData] = useState({
     bookId: '',
@@ -203,6 +204,14 @@ const AdminLoans = ({ loans, setLoans, books, setBooks, students, deleteLoan }) 
     }
   };
 
+  const confirmDeleteAll = () => {
+    loans.forEach(l => {
+      if (deleteLoan) deleteLoan(l.id);
+    });
+    setLoans([]);
+    setDeleteAllConfirm(false);
+  };
+
   const getBookTitle = (id) => books.find(b => b.id === id)?.title || 'Elemento eliminado';
   const getStudentName = (id) => students.find(s => s.id === id)?.name || 'Usuario eliminado';
 
@@ -228,9 +237,14 @@ const AdminLoans = ({ loans, setLoans, books, setBooks, students, deleteLoan }) 
     <div className="animate-fade-in">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl">Préstamos de Libros y Equipos</h1>
-        <button className="btn-primary" onClick={() => setIsModalOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Plus size={20} /> Registrar Préstamo
-        </button>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <button className="glass-card" onClick={() => setDeleteAllConfirm(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f87171', borderColor: 'rgba(239, 68, 68, 0.2)' }}>
+            <Trash2 size={20} /> Borrar Historial
+          </button>
+          <button className="btn-primary" onClick={() => setIsModalOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Plus size={20} /> Registrar Préstamo
+          </button>
+        </div>
       </div>
 
       <div className="glass-card p-4 mb-8">
@@ -433,6 +447,15 @@ const AdminLoans = ({ loans, setLoans, books, setBooks, students, deleteLoan }) 
         onConfirm={confirmDelete}
         title="¿Eliminar préstamo?"
         message="¿Estás seguro de que deseas eliminar este registro? Si el préstamo está pendiente, el stock del libro se restaurará automáticamente."
+      />
+
+      <ConfirmDialog 
+        isOpen={deleteAllConfirm}
+        onClose={() => setDeleteAllConfirm(false)}
+        onConfirm={confirmDeleteAll}
+        title="⚠️ ¿ELIMINAR TODO EL HISTORIAL?"
+        message="Esta acción borrará ABSOLUTAMENTE TODOS los registros de préstamos (pendientes y devueltos). ¿Estás seguro?"
+        confirmText="SÍ, BORRAR TODO"
       />
     </div>
   );
