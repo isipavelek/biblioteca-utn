@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Plus, Trash2, Edit, User, Shield, Key } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 
-const AdminAdmins = ({ admins, setAdmins, deleteAdmin }) => {
+const AdminAdmins = ({ admins, setAdmins, deleteAdmin, updateAdmin }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null });
@@ -27,9 +27,13 @@ const AdminAdmins = ({ admins, setAdmins, deleteAdmin }) => {
   const handleSave = (e) => {
     e.preventDefault();
     if (editingAdmin) {
-      setAdmins(admins.map(a => a.id === editingAdmin.id ? { ...formData, id: a.id } : a));
+      const updatedAdmin = { ...formData, id: editingAdmin.id };
+      setAdmins(admins.map(a => a.id === editingAdmin.id ? updatedAdmin : a));
+      if (updateAdmin) updateAdmin(updatedAdmin);
     } else {
-      setAdmins([...admins, { ...formData, id: Date.now() }]);
+      const newAdmin = { ...formData, id: String(Date.now()) };
+      setAdmins([...admins, newAdmin]);
+      if (updateAdmin) updateAdmin(newAdmin);
     }
     setIsModalOpen(false);
   };

@@ -114,7 +114,7 @@ const SearchableSelect = ({ label, options, value, onChange, placeholder, icon: 
   );
 };
 
-const AdminLoans = ({ loans, setLoans, books, setBooks, students, deleteLoan }) => {
+const AdminLoans = ({ loans, setLoans, books, setBooks, students, deleteLoan, updateLoan, updateBook }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
   const [selectedLoan, setSelectedLoan] = useState(null);
@@ -129,6 +129,33 @@ const AdminLoans = ({ loans, setLoans, books, setBooks, students, deleteLoan }) 
     unitCode: '001',
     loanDate: new Date().toISOString().split('T')[0]
   });
+
+  const getAvailableUnits = (bId) => {
+    const book = books.find(b => String(b.id) === String(bId));
+    if (!book) return [];
+    const activeUnitCodes = loans
+      .filter(l => String(l.bookId) === String(bId) && l.status === 'active')
+      .map(l => l.fullCode?.slice(-3) || '');
+    
+    const available = [];
+    const total = parseInt(book.total_count) || 1;
+    for (let i = 1; i <= total; i++) {
+      const code = String(i).padStart(3, '0');
+      if (!activeUnitCodes.includes(code)) {
+        available.push(code);
+      }
+    }
+    return available;
+  };
+
+  useEffect(() => {
+    if (formData.bookId) {
+      const available = getAvailableUnits(formData.bookId);
+      if (available.length > 0 && !available.includes(formData.unitCode)) {
+        setFormData(prev => ({ ...prev, unitCode: available[0] }));
+      }
+    }
+  }, [formData.bookId, loans]);
 
   const getBaseCode = (id) => {
     const book = books.find(b => String(b.id) === String(id));
@@ -153,6 +180,43 @@ const AdminLoans = ({ loans, setLoans, books, setBooks, students, deleteLoan }) 
     const unit = formData.unitCode.padStart(3, '0');
     const fullCode = `${base}${unit}`;
 
+    // 0. Check student's active loans count
+    const studentActiveLoans = loans.filter(l => 
+      String(l.studentId) === String(formData.studentId) && 
+      l.status === 'active'
+    );
+    if (studentActiveLoans.length >= 2) {
+      alert('Este alumno ya posee 2 préstamos activos.');
+      return;
+    }
+
+    // 1. Check if this specific copy is already loaned
+    const isAlreadyLoaned = loans.find(l => l.fullCode === fullCode && l.status === 'active');
+    if (isAlreadyLoaned) {
+      const available = getAvailableUnits(bookId);
+      if (available.length > 0) {
+        if (window.confirm(`El ejemplar ${unit} ya está prestado a ${getStudentName(isAlreadyLoaned.studentId)}.\n\n¿Deseas registrar el préstamo con el siguiente ejemplar disponible (${available[0]})?`)) {
+          setFormData({ ...formData, unitCode: available[0] });
+          return;
+        }
+      } else {
+        alert('Este ejemplar ya está prestado y no quedan otras unidades disponibles.');
+        return;
+      }
+    }
+
+    // 2. Check if the student already has this book
+    const studentHasBook = loans.find(l => 
+      String(l.studentId) === String(formData.studentId) && 
+      String(l.bookId) === String(bookId) && 
+      l.status === 'active'
+    );
+    if (studentHasBook) {
+      if (!window.confirm(`El usuario ${getStudentName(formData.studentId)} ya tiene un préstamo activo de este libro.\n\n¿Estás seguro de que quieres registrar otro ejemplar para el mismo usuario?`)) {
+        return;
+      }
+    }
+
     const newLoan = {
       id: String(Date.now()),
       bookId: bookId,
@@ -164,8 +228,14 @@ const AdminLoans = ({ loans, setLoans, books, setBooks, students, deleteLoan }) 
       fullCode: fullCode
     };
 
+    const updatedBook = { ...book, available_count: book.available_count - 1 };
     setLoans([newLoan, ...loans]);
-    setBooks(books.map(b => b.id === bookId ? { ...b, available_count: b.available_count - 1 } : b));
+    setBooks(books.map(b => b.id === bookId ? updatedBook : b));
+    
+    // Sync with Firestore
+    if (updateLoan) updateLoan(newLoan);
+    if (updateBook) updateBook(updatedBook);
+
     setIsModalOpen(false);
     setFormData({ ...formData, bookId: '', studentId: '' });
   };
@@ -177,13 +247,23 @@ const AdminLoans = ({ loans, setLoans, books, setBooks, students, deleteLoan }) 
   };
 
   const handleConfirmReturn = () => {
-    setLoans(loans.map(l => String(l.id) === String(selectedLoan.id) ? { 
-      ...l, 
+    const returnedLoan = { 
+      ...selectedLoan, 
       status: 'returned', 
       returnDate: new Date().toISOString().split('T')[0],
       observations: observations 
-    } : l));
-    setBooks(books.map(b => String(b.id) === String(selectedLoan.bookId) ? { ...b, available_count: b.available_count + 1 } : b));
+    };
+    
+    const bookToUpdate = books.find(b => String(b.id) === String(selectedLoan.bookId));
+    const updatedBook = bookToUpdate ? { ...bookToUpdate, available_count: Math.min(bookToUpdate.total_count, bookToUpdate.available_count + 1) } : null;
+
+    setLoans(loans.map(l => String(l.id) === String(selectedLoan.id) ? returnedLoan : l));
+    if (updatedBook) setBooks(books.map(b => String(b.id) === String(selectedLoan.bookId) ? updatedBook : b));
+    
+    // Sync with Firestore
+    if (updateLoan) updateLoan(returnedLoan);
+    if (updateBook && updatedBook) updateBook(updatedBook);
+
     setIsReturnModalOpen(false);
     setSelectedLoan(null);
   };
@@ -196,12 +276,29 @@ const AdminLoans = ({ loans, setLoans, books, setBooks, students, deleteLoan }) 
     const loanId = String(deleteConfirm.id);
     const loanToDelete = loans.find(l => String(l.id) === loanId);
     if (loanToDelete) {
-      if (loanToDelete.status === 'active') {
-        setBooks(books.map(b => String(b.id) === String(loanToDelete.bookId) ? { ...b, available_count: b.available_count + 1 } : b));
-      }
-      if (deleteLoan) await deleteLoan(loanId);
+      // Optimistic Update
+      const previousLoans = [...loans];
+      const previousBooks = [...books];
+      
       setLoans(loans.filter(l => String(l.id) !== loanId));
+      if (loanToDelete.status === 'active') {
+        const bookToUpdate = books.find(b => String(b.id) === String(loanToDelete.bookId));
+        if (bookToUpdate) {
+          const updatedBook = { ...bookToUpdate, available_count: Math.min(bookToUpdate.total_count, bookToUpdate.available_count + 1) };
+          setBooks(books.map(b => String(b.id) === String(loanToDelete.bookId) ? updatedBook : b));
+          if (updateBook) updateBook(updatedBook);
+        }
+      }
       setDeleteConfirm({ isOpen: false, id: null });
+
+      try {
+        if (deleteLoan) await deleteLoan(loanId);
+      } catch (err) {
+        console.error("Error deleting loan, reverting:", err);
+        setLoans(previousLoans);
+        setBooks(previousBooks);
+        alert('Hubo un problema al eliminar el préstamo en el servidor. Se ha restaurado la información local.');
+      }
     }
   };
 
@@ -238,22 +335,25 @@ const AdminLoans = ({ loans, setLoans, books, setBooks, students, deleteLoan }) 
     sublabel: `${getBaseCode(b.id)} (${b.available_count} disponibles)`
   }));
 
-  const userOptions = students.map(s => ({
-    id: s.id,
-    label: s.name,
-    sublabel: `${s.grade} - ${s.type} (DNI: ${s.dni})`
-  }));
+  const userOptions = students.map(s => {
+    const activeCount = loans.filter(l => String(l.studentId) === String(s.id) && l.status === 'active').length;
+    return {
+      id: s.id,
+      label: s.name,
+      sublabel: `${s.grade} - ${s.type} (Préstamos activos: ${activeCount})`
+    };
+  });
 
   return (
     <div className="animate-fade-in">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl">Préstamos de Libros y Equipos</h1>
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <button className="glass-card" onClick={() => setDeleteAllConfirm(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#f87171', borderColor: 'rgba(239, 68, 68, 0.2)' }}>
-            <Trash2 size={20} /> Borrar Historial
+      <div className="flex justify-between items-center mb-8 mobile-stack">
+        <h1 className="text-3xl">Préstamos</h1>
+        <div style={{ display: 'flex', gap: '1rem' }} className="w-full">
+          <button className="glass-card flex-1" onClick={() => setDeleteAllConfirm(true)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', color: '#f87171', borderColor: 'rgba(239, 68, 68, 0.2)' }}>
+            <Trash2 size={20} /> <span className="mobile-hide">Borrar Historial</span>
           </button>
-          <button className="btn-primary" onClick={() => setIsModalOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Plus size={20} /> Registrar Préstamo
+          <button className="btn-primary flex-1" onClick={() => setIsModalOpen(true)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+            <Plus size={20} /> Registrar <span className="mobile-hide">Préstamo</span>
           </button>
         </div>
       </div>
@@ -286,26 +386,26 @@ const AdminLoans = ({ loans, setLoans, books, setBooks, students, deleteLoan }) 
           <tbody>
             {filteredLoans.map(loan => (
               <tr key={loan.id} style={{ borderBottom: '1px solid var(--border-glass)' }}>
-                <td style={{ padding: '0.75rem 1rem' }}>
+                <td data-label="Código" style={{ padding: '0.75rem 1rem' }}>
                   <code style={{ background: 'rgba(255,255,255,0.1)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.85rem' }}>
                     {loan.fullCode || 'N/A'}
                   </code>
                 </td>
-                <td style={{ padding: '0.75rem 1rem' }}>
+                <td data-label="Elemento" style={{ padding: '0.75rem 1rem' }}>
                   <div className="flex items-center gap-2" style={{ gap: '0.5rem' }}>
                     <BookOpen size={16} className="text-muted" />
                     <span style={{ fontWeight: '500', fontSize: '0.9rem' }}>{getBookTitle(loan.bookId)}</span>
                   </div>
                 </td>
-                <td style={{ padding: '0.75rem 1rem' }}>
+                <td data-label="Usuario" style={{ padding: '0.75rem 1rem' }}>
                   <div className="flex items-center gap-2" style={{ gap: '0.5rem' }}>
                     <User size={16} className="text-muted" />
                     <span style={{ fontSize: '0.9rem' }}>{getStudentName(loan.studentId)}</span>
                   </div>
                 </td>
-                <td style={{ padding: '0.75rem 1rem', fontSize: '0.85rem' }}>{loan.loanDate}</td>
-                <td style={{ padding: '0.75rem 1rem' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <td data-label="Fecha" style={{ padding: '0.75rem 1rem', fontSize: '0.85rem' }}>{loan.loanDate}</td>
+                <td data-label="Estado" style={{ padding: '0.75rem 1rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-end' }}>
                     <span className={`badge ${loan.status === 'active' ? 'badge-loaned' : 'badge-available'}`} style={{ display: 'flex', alignItems: 'center', gap: '4px', width: 'fit-content', fontSize: '0.65rem', padding: '2px 6px' }}>
                       {loan.status === 'active' ? <Clock size={10} /> : <Check size={10} />}
                       {loan.status === 'active' ? 'Pendiente' : 'Devuelto'}
@@ -318,7 +418,7 @@ const AdminLoans = ({ loans, setLoans, books, setBooks, students, deleteLoan }) 
                     )}
                   </div>
                 </td>
-                <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
+                <td data-label="Acciones" style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
                   <div className="flex items-center gap-2 justify-end">
                     {loan.status === 'active' ? (
                       <button 
@@ -382,10 +482,25 @@ const AdminLoans = ({ loans, setLoans, books, setBooks, students, deleteLoan }) 
                 />
                 
                 <div>
-                  <label className="text-sm" style={{ display: 'block', marginBottom: '0.5rem', color: '#94a3b8' }}>Número de Ejemplar (3 dígitos)</label>
-                  <input className="input-field" maxLength="3" required value={formData.unitCode} onChange={(e) => setFormData({...formData, unitCode: e.target.value})} placeholder="001" />
+                  <label className="text-sm" style={{ display: 'block', marginBottom: '0.5rem', color: '#94a3b8' }}>
+                    Seleccionar Ejemplar
+                  </label>
+                  <select 
+                    className="input-field" 
+                    required 
+                    value={formData.unitCode} 
+                    onChange={(e) => setFormData({...formData, unitCode: e.target.value})}
+                  >
+                    <option value="" disabled>Seleccione un ejemplar...</option>
+                    {formData.bookId && getAvailableUnits(formData.bookId).map(unit => (
+                      <option key={unit} value={unit} style={{ background: '#1e293b' }}>Ejemplar {unit}</option>
+                    ))}
+                    {formData.bookId && getAvailableUnits(formData.bookId).length === 0 && (
+                      <option disabled style={{ background: '#1e293b' }}>No hay ejemplares disponibles</option>
+                    )}
+                  </select>
                   <p className="text-xs text-muted mt-4" style={{ marginTop: '0.5rem' }}>
-                    Código Final: {formData.bookId ? getBaseCode(parseInt(formData.bookId)) : '---------'}{formData.unitCode.padStart(3, '0')}
+                    Código Final: <code style={{ color: 'var(--primary)', fontWeight: 'bold' }}>{formData.bookId ? getBaseCode(formData.bookId) : '---------'}{formData.unitCode || '---'}</code>
                   </p>
                 </div>
 

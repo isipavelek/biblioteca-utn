@@ -4,7 +4,7 @@ import { Plus, Trash2, Edit, RefreshCcw, Database } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { db } from '../firebase';
 
-const AdminCategories = ({ categories = [], setCategories, resourceTypes = [], setResourceTypes }) => {
+const AdminCategories = ({ categories = [], setCategories, updateCategory, deleteCategory, resourceTypes = [], setResourceTypes, updateResourceType, deleteResourceType }) => {
   const [activeTab, setActiveTab] = useState('categories'); // 'categories' or 'types'
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
@@ -117,9 +117,11 @@ const AdminCategories = ({ categories = [], setCategories, resourceTypes = [], s
     if (activeTab === 'categories') {
       if (editingItem) setCategories(categories.map(c => c.id === editingItem.id ? newItem : c));
       else setCategories([...categories, newItem]);
+      if (updateCategory) updateCategory(newItem);
     } else {
       if (editingItem) setResourceTypes(resourceTypes.map(t => t.id === editingItem.id ? newItem : t));
       else setResourceTypes([...resourceTypes, newItem]);
+      if (updateResourceType) updateResourceType(newItem);
     }
     setIsModalOpen(false);
   };
@@ -197,8 +199,13 @@ const AdminCategories = ({ categories = [], setCategories, resourceTypes = [], s
         isOpen={deleteConfirm.isOpen}
         onClose={() => setDeleteConfirm({ isOpen: false, item: null })}
         onConfirm={() => {
-          if (activeTab === 'categories') setCategories(categories.filter(c => c.id !== deleteConfirm.item.id));
-          else setResourceTypes(resourceTypes.filter(t => t.id !== deleteConfirm.item.id));
+          if (activeTab === 'categories') {
+            setCategories(categories.filter(c => c.id !== deleteConfirm.item.id));
+            if (deleteCategory) deleteCategory(deleteConfirm.item.id);
+          } else {
+            setResourceTypes(resourceTypes.filter(t => t.id !== deleteConfirm.item.id));
+            if (deleteResourceType) deleteResourceType(deleteConfirm.item.id);
+          }
           setDeleteConfirm({ isOpen: false, item: null });
         }}
         title="Eliminar"

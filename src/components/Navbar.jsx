@@ -39,23 +39,21 @@ const Navbar = ({ currentUser, onLogout }) => {
         )}
       </Link>
 
-      <div style={{ display: 'flex', gap: '1.5rem', marginLeft: 'auto' }}>
+      <div className="nav-links" style={{ display: 'flex', gap: '1.5rem', marginLeft: 'auto' }}>
         {!currentUser ? (
           <>
-            <Link to="/search" style={{ color: location.pathname === '/search' ? 'var(--primary)' : 'white', textDecoration: 'none', fontWeight: '600', alignSelf: 'center' }}>Buscador de Libros</Link>
-            <Link to="/" style={{ color: location.pathname === '/' ? 'var(--primary)' : 'white', textDecoration: 'none', fontWeight: '600', alignSelf: 'center' }}>Institucional</Link>
-            <Link to="/login" className="btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}>Login Admin</Link>
+            <Link to="/search" style={{ color: location.pathname === '/search' ? 'var(--primary)' : 'white', textDecoration: 'none', fontWeight: '600', alignSelf: 'center', whiteSpace: 'nowrap' }}>Buscador</Link>
+            <Link to="/" className="mobile-hide" style={{ color: location.pathname === '/' ? 'var(--primary)' : 'white', textDecoration: 'none', fontWeight: '600', alignSelf: 'center', whiteSpace: 'nowrap' }}>Institucional</Link>
+            <Link to="/login" className="btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', whiteSpace: 'nowrap' }}>Login Admin</Link>
           </>
         ) : (
           <>
             <NavLink to="/search" icon={<BookOpen size={18} />} label="Buscador" active={location.pathname === '/search'} />
-            <NavLink to="/" icon={<HelpCircle size={18} />} label="Institucional" active={location.pathname === '/'} />
             <NavLink to="/admin" icon={<LayoutDashboard size={18} />} label="Dashboard" active={location.pathname === '/admin'} />
             <NavLink to="/admin/inventory" icon={<BookOpen size={18} />} label="Inventario" active={location.pathname === '/admin/inventory'} />
             <NavLink to="/admin/loans" icon={<ClipboardList size={18} />} label="Préstamos" active={location.pathname === '/admin/loans'} />
             <NavLink to="/admin/students" icon={<Users size={18} />} label="Usuarios" active={location.pathname === '/admin/students'} />
-            <NavLink to="/admin/categories" icon={<Tags size={18} />} label="Categorías" active={location.pathname === '/admin/categories'} />
-            <NavLink to="/admin/users" icon={<Shield size={18} />} label="Admins" active={location.pathname === '/admin/users'} />
+            <NavLink to="/admin/categories" icon={<Tags size={18} />} label="Cat" active={location.pathname === '/admin/categories'} />
             <button 
               onClick={onLogout} 
               style={{ 
@@ -70,10 +68,11 @@ const Navbar = ({ currentUser, onLogout }) => {
                 marginLeft: '0.5rem',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.4rem'
+                gap: '0.4rem',
+                whiteSpace: 'nowrap'
               }}
             >
-              Salir
+              <span className="nav-label">Salir</span>
             </button>
           </>
         )}
@@ -94,7 +93,7 @@ const NavLink = ({ to, icon, label, active }) => (
     transition: 'all 0.3s'
   }}>
     {icon}
-    <span>{label}</span>
+    <span className="nav-label">{label}</span>
   </Link>
 );
 

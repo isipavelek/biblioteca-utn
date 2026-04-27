@@ -156,18 +156,77 @@ function App() {
             }}
           />
         )}
-        <main style={{ paddingTop: '64px', paddingLeft: '1.5rem', paddingRight: '1.5rem', paddingBottom: '2rem' }}>
+        <main className="main-container" style={{ paddingTop: '64px', paddingLeft: '1.5rem', paddingRight: '1.5rem', paddingBottom: '2rem' }}>
           <Routes>
             <Route path="/" element={<Info />} />
             <Route path="/search" element={<Home books={books} categories={categories} />} />
             <Route path="/info" element={<Navigate to="/" />} />
             <Route path="/login" element={<LoginPage setCurrentUser={setCurrentUser} />} />
             <Route path="/admin" element={<ProtectedRoute><AdminDashboard books={books} students={students} loans={loans} /></ProtectedRoute>} />
-            <Route path="/admin/inventory" element={<ProtectedRoute><AdminInventory books={books} setBooks={(nb)=>{setBooks(nb); nb.forEach(b=>syncItem('books',b));}} deleteItem={(id)=>deleteItem('books',id)} categories={categories} resourceTypes={resourceTypes} loans={loans} setLoans={setLoans} /></ProtectedRoute>} />
-            <Route path="/admin/loans" element={<ProtectedRoute><AdminLoans loans={loans} setLoans={(nl)=>{setLoans(nl); nl.forEach(l=>syncItem('loans',l));}} deleteLoan={(id)=>deleteItem('loans',id)} books={books} setBooks={(nb)=>{setBooks(nb); nb.forEach(b=>syncItem('books',b));}} students={students} /></ProtectedRoute>} />
-            <Route path="/admin/students" element={<ProtectedRoute><AdminStudents students={students} setStudents={(ns)=>{setStudents(ns); ns.forEach(s=>syncItem('students',s));}} deleteStudent={(id)=>deleteItem('students',id)} loans={loans} books={books} /></ProtectedRoute>} />
-            <Route path="/admin/categories" element={<ProtectedRoute><AdminCategories categories={categories} setCategories={(nc)=>{setCategories(nc); nc.forEach(c=>syncItem('categories',c));}} resourceTypes={resourceTypes} setResourceTypes={(nt)=>{setResourceTypes(nt); nt.forEach(t=>syncItem('resource_types',t));}} /></ProtectedRoute>} />
-            <Route path="/admin/users" element={<ProtectedRoute><AdminAdmins admins={admins} setAdmins={(na)=>{setAdmins(na); na.forEach(a=>syncItem('admins',a));}} deleteAdmin={(id)=>deleteItem('admins',id)} /></ProtectedRoute>} />
+            <Route path="/admin/inventory" element={
+              <ProtectedRoute>
+                <AdminInventory 
+                  books={books} 
+                  setBooks={setBooks} 
+                  updateBook={(b) => syncItem('books', b)}
+                  deleteItem={(id) => deleteItem('books', id)} 
+                  categories={categories} 
+                  resourceTypes={resourceTypes} 
+                  loans={loans} 
+                  setLoans={setLoans} 
+                />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/loans" element={
+              <ProtectedRoute>
+                <AdminLoans 
+                  loans={loans} 
+                  setLoans={setLoans} 
+                  updateLoan={(l) => syncItem('loans', l)}
+                  deleteLoan={(id) => deleteItem('loans', id)} 
+                  books={books} 
+                  setBooks={setBooks} 
+                  updateBook={(b) => syncItem('books', b)}
+                  students={students} 
+                />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/students" element={
+              <ProtectedRoute>
+                <AdminStudents 
+                  students={students} 
+                  setStudents={setStudents} 
+                  updateStudent={(s) => syncItem('students', s)}
+                  deleteStudent={(id) => deleteItem('students', id)} 
+                  loans={loans} 
+                  books={books} 
+                />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/categories" element={
+              <ProtectedRoute>
+                <AdminCategories 
+                  categories={categories} 
+                  setCategories={setCategories} 
+                  updateCategory={(c) => syncItem('categories', c)}
+                  deleteCategory={(id) => deleteItem('categories', id)}
+                  resourceTypes={resourceTypes} 
+                  setResourceTypes={setResourceTypes} 
+                  updateResourceType={(t) => syncItem('resource_types', t)}
+                  deleteResourceType={(id) => deleteItem('resource_types', id)}
+                />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin/users" element={
+              <ProtectedRoute>
+                <AdminAdmins 
+                  admins={admins} 
+                  setAdmins={setAdmins} 
+                  updateAdmin={(a) => syncItem('admins', a)}
+                  deleteAdmin={(id) => deleteItem('admins', id)} 
+                />
+              </ProtectedRoute>
+            } />
           </Routes>
         </main>
       </div>

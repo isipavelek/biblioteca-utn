@@ -1,10 +1,12 @@
 import React, { useState, useRef } from 'react';
-import { Plus, Search, Trash2, Edit, FileSpreadsheet, Image as ImageIcon } from 'lucide-react';
+import { Plus, Search, Trash2, Edit, FileSpreadsheet, Image as ImageIcon, Camera, Loader2 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import * as XLSX from 'xlsx';
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { storage } from "../firebase";
 import ConfirmDialog from '../components/ConfirmDialog';
 
-const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes, loans, setLoans }) => {
+const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes, loans, setLoans, updateBook }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBook, setEditingBook] = useState(null);
@@ -12,7 +14,9 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
   const [deleteAllConfirm, setDeleteAllConfirm] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [isGrouping, setIsGrouping] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef(null);
+  const imageInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -26,8 +30,32 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
     typeCode: '001',
     categoryCode: '001',
     itemCode: '001',
-    image: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=400'
+    image: ''
   });
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Check size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert("La imagen es muy pesada. El máximo es 5MB.");
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      const storageRef = ref(storage, `book-covers/${Date.now()}_${file.name}`);
+      await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(storageRef);
+      setFormData(prev => ({ ...prev, image: downloadURL }));
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      alert("Error al subir la imagen. Verifica que el archivo sea una imagen válida.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const getBaseCode = (item) => {
     const t = (item.typeCode || '001').padStart(3, '0');
@@ -119,9 +147,17 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
     }
 
     if (editingBook) {
-      setBooks(books.map(b => String(b.id) === String(editingBook.id) ? { ...formData, available_count: b.available_count + (formData.total_count - b.total_count) } : b));
+      const newTotal = parseInt(formData.total_count) || 1;
+      const diff = newTotal - editingBook.total_count;
+      const newAvail = Math.max(0, Math.min(newTotal, editingBook.available_count + diff));
+      const updatedBook = { ...formData, total_count: newTotal, available_count: newAvail };
+      
+      setBooks(books.map(b => String(b.id) === String(editingBook.id) ? updatedBook : b));
+      if (updateBook) updateBook(updatedBook);
     } else {
-      setBooks([...books, { ...formData, id: String(Date.now()), available_count: formData.total_count }]);
+      const newBook = { ...formData, id: String(Date.now()), available_count: formData.total_count };
+      setBooks([...books, newBook]);
+      if (updateBook) updateBook(newBook);
     }
     setIsModalOpen(false);
   };
@@ -368,23 +404,23 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
 
   return (
     <div className="animate-fade-in">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex justify-between items-center mb-8 mobile-stack">
         <div>
-          <h1 className="text-3xl">Inventario General</h1>
-          <p className="text-muted text-sm mt-1">Gestión de recursos con validación de códigos TTT-CCC-EEE</p>
+          <h1 className="text-3xl">Inventario</h1>
+          <p className="text-muted text-sm mt-1 mobile-hide">Gestión de recursos TTT-CCC-EEE</p>
         </div>
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <button className="btn-primary" onClick={() => handleOpenModal()} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Plus size={20} /> Nuevo Elemento
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }} className="w-full">
+          <button className="btn-primary flex-1" onClick={() => handleOpenModal()} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+            <Plus size={20} /> Nuevo
           </button>
           <button className="glass-card" onClick={handleGroupDuplicates} disabled={isGrouping} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', color: 'var(--primary)', opacity: isGrouping ? 0.6 : 1 }}>
-            <Plus size={20} /> {isGrouping ? 'Procesando...' : 'Agrupar Duplicados'}
+            <Plus size={20} /> <span className="mobile-hide">{isGrouping ? 'Procesando...' : 'Agrupar'}</span>
           </button>
           <button className="glass-card" onClick={handleDeleteAll} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', color: '#f87171', borderColor: 'rgba(239, 68, 68, 0.2)' }}>
-            <Trash2 size={20} /> Borrar Todo
+            <Trash2 size={20} /> <span className="mobile-hide">Borrar</span>
           </button>
-          <button className="glass-card" onClick={() => fileInputRef.current.click()} disabled={isImporting} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', color: '#4ade80' }}>
-            <FileSpreadsheet size={20} /> {isImporting ? 'Importando...' : 'Importar Biblioteca'}
+          <button className="glass-card flex-1" onClick={() => fileInputRef.current.click()} disabled={isImporting} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', color: '#4ade80' }}>
+            <FileSpreadsheet size={20} /> <span className="mobile-hide">{isImporting ? '...' : 'Importar'}</span>
           </button>
           <input type="file" ref={fileInputRef} style={{ display: 'none' }} accept=".xlsx, .xls" onChange={handleFileChange} />
         </div>
@@ -417,7 +453,7 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
           <tbody>
             {filteredBooks.map(item => item && (
               <tr key={item.id} className="hover-card-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', transition: 'background 0.2s' }}>
-                <td style={{ padding: '0.75rem 1rem' }}>
+                <td data-label="Código" style={{ padding: '0.75rem 1rem' }}>
                   <code style={{ 
                     background: 'rgba(255,255,255,0.05)', 
                     color: 'var(--primary)', 
@@ -430,30 +466,30 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
                     {getFullCodeRange(item)}
                   </code>
                 </td>
-                <td style={{ padding: '1rem 1.5rem' }}>
+                <td data-label="Elemento" style={{ padding: '1rem 1.5rem' }}>
                   <div className="flex items-center gap-4">
-                    <img src={item.image} alt={item.title} style={{ width: '40px', height: '60px', objectFit: 'cover', borderRadius: '4px', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }} />
-                    <div>
+                    <img className="mobile-hide" src={item.image} alt={item.title} style={{ width: '40px', height: '60px', objectFit: 'cover', borderRadius: '4px', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }} />
+                    <div style={{ textAlign: 'right' }}>
                       <div style={{ fontWeight: '700', color: 'white' }}>{item.title}</div>
                       <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{item.author}</div>
                     </div>
                   </div>
                 </td>
-                <td style={{ padding: '0.75rem 1rem' }}>
-                  <div className="flex flex-col gap-1">
+                <td data-label="Categoría" style={{ padding: '0.75rem 1rem' }}>
+                  <div className="flex flex-col gap-1" style={{ textAlign: 'right' }}>
                     <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--accent)', fontWeight: '700' }}>{item.category}</span>
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{item.editorial || item.institutionalType}</span>
                   </div>
                 </td>
-                <td style={{ padding: '0.75rem 1rem' }}>
-                  <div className="flex items-center gap-2">
+                <td data-label="Stock" style={{ padding: '0.75rem 1rem' }}>
+                  <div className="flex items-center gap-2" style={{ justifyContent: 'flex-end' }}>
                     <div style={{ fontSize: '1rem', fontWeight: '700' }}>{item.available_count} / {item.total_count}</div>
                     <div style={{ width: '40px', height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
                       <div style={{ width: `${(item.available_count / item.total_count) * 100}%`, height: '100%', background: item.available_count === 0 ? '#f87171' : '#4ade80' }} />
                     </div>
                   </div>
                 </td>
-                <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
+                <td data-label="Acciones" style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
                   <div className="flex justify-end gap-2">
                     <button onClick={() => handleOpenModal(item)} className="text-muted hover:text-white" style={{ background: 'rgba(255,255,255,0.05)', padding: '0.5rem', borderRadius: '0.5rem' }}><Edit size={18} /></button>
                     <button onClick={() => handleDelete(item.id)} className="text-muted hover:text-red-400" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#f87171', padding: '0.5rem', borderRadius: '0.5rem' }}><Trash2 size={18} /></button>
@@ -554,9 +590,62 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
                   <input type="number" className="input-field" min="1" required value={formData.total_count} onChange={(e) => setFormData({...formData, total_count: parseInt(e.target.value) || 1})} />
                 </div>
 
-                <div style={{ gridColumn: 'span 2' }}>
-                  <label className="text-xs text-muted font-bold uppercase tracking-wider block mb-2">URL Portada / Imagen</label>
-                  <input className="input-field" value={formData.image} onChange={(e) => setFormData({...formData, image: e.target.value})} />
+                <div style={{ gridColumn: 'span 3' }}>
+                  <label className="text-xs text-muted font-bold uppercase tracking-wider block mb-2">Portada / Imagen</label>
+                  <div className="flex gap-4 items-start mobile-stack">
+                    <div 
+                      onClick={() => imageInputRef.current.click()}
+                      className="glass-card"
+                      style={{ 
+                        width: '100px', 
+                        height: '140px', 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        cursor: 'pointer',
+                        overflow: 'hidden',
+                        position: 'relative',
+                        borderStyle: 'dashed',
+                        borderColor: formData.image ? 'var(--primary)' : 'var(--border-glass)',
+                        flexShrink: 0
+                      }}
+                    >
+                      {formData.image ? (
+                        <img src={formData.image} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <div style={{ textAlign: 'center', padding: '0.5rem' }}>
+                          <Camera size={24} className="text-muted" style={{ marginBottom: '0.5rem' }} />
+                          <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>TOMAR FOTO O SUBIR</div>
+                        </div>
+                      )}
+                      {isUploading && (
+                        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Loader2 className="animate-spin" size={24} color="white" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="w-full">
+                      <input 
+                        type="file" 
+                        ref={imageInputRef} 
+                        style={{ display: 'none' }} 
+                        accept="image/*" 
+                        capture="environment"
+                        onChange={handleImageUpload} 
+                      />
+                      <input 
+                        className="input-field" 
+                        placeholder="Pegar URL de imagen..." 
+                        value={formData.image} 
+                        onChange={(e) => setFormData({...formData, image: e.target.value})} 
+                        style={{ marginBottom: '0.5rem' }}
+                      />
+                      <p className="text-[10px] text-muted">
+                        Puedes subir una foto desde tu galería, sacar una foto con la cámara (en celulares) o pegar un link de internet directamente.
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
                 <div>

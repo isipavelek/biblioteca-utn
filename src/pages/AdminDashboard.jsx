@@ -67,8 +67,8 @@ const AdminDashboard = ({ books, students, loans }) => {
   // ─── styles ────────────────────────────────────────────────────────────────
   const s = {
     page: { animation: 'fadeIn 0.4s ease' },
-    header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' },
-    h1: { fontSize: '1.4rem', fontWeight: '800', margin: 0 },
+    header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem' },
+    h1: { fontSize: '1.4rem', fontWeight: '800', margin: 0, whiteSpace: 'nowrap' },
     subtitle: { fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' },
     filterBox: {
       display: 'flex', alignItems: 'center', gap: '0.5rem',
@@ -77,11 +77,11 @@ const AdminDashboard = ({ books, students, loans }) => {
     },
     filterSelect: { background: 'none', color: 'white', border: 'none', outline: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '0.8rem' },
 
-    // 4-column stat row
-    statGrid: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem', marginBottom: '1rem' },
+    // 4-column stat row (now using CSS class for responsiveness)
+    statGrid: { marginBottom: '1rem' },
 
-    // main 2-column layout: left=pie, right=bar+ranking
-    mainGrid: { display: 'grid', gridTemplateColumns: '280px 1fr', gap: '0.75rem', alignItems: 'start' },
+    // main 2-column layout (now using CSS class)
+    mainGrid: { marginBottom: '0.75rem' },
     leftCol: { display: 'flex', flexDirection: 'column', gap: '0.75rem' },
     rightCol: { display: 'flex', flexDirection: 'column', gap: '0.75rem' },
 
@@ -94,7 +94,7 @@ const AdminDashboard = ({ books, students, loans }) => {
     cardLabel: { fontSize: '0.65rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: '0.6rem' },
 
     // ranking row inside card
-    rankingGrid: { display: 'grid', gridTemplateColumns: '1fr 160px', gap: '1rem', alignItems: 'center' },
+    rankingGrid: { display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' },
     rankRow: { display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.35rem 0.5rem', borderRadius: '0.5rem', background: 'rgba(255,255,255,0.025)', marginBottom: '0.25rem' },
 
     // overdue card
@@ -121,15 +121,15 @@ const AdminDashboard = ({ books, students, loans }) => {
       </div>
 
       {/* 4 Stat Cards */}
-      <div style={s.statGrid}>
-        <StatCard icon={<Book size={16} />} label="Títulos Únicos" value={books.length} color="#6366f1" />
-        <StatCard icon={<TrendingUp size={16} />} label="Total Ejemplares" value={totalItems} color="#4ade80" />
+      <div style={s.statGrid} className="grid-responsive-4">
+        <StatCard icon={<Book size={16} />} label="Títulos" value={books.length} color="#6366f1" />
+        <StatCard icon={<TrendingUp size={16} />} label="Ejemplares" value={totalItems} color="#4ade80" />
         <StatCard icon={<Monitor size={16} />} label="Equipos" value={equipmentCount} color="#ec4899" />
         <StatCard icon={<AlertTriangle size={16} />} label="Vencidos" value={overdueLoans.length} color="#f87171" highlight={overdueLoans.length > 0} />
       </div>
 
       {/* Main 2-column layout */}
-      <div style={s.mainGrid}>
+      <div style={s.mainGrid} className="dashboard-main-grid">
         {/* LEFT: Pie + optional overdue */}
         <div style={s.leftCol}>
           <div style={{ ...s.card, ...s.cardPad }}>
@@ -206,7 +206,7 @@ const AdminDashboard = ({ books, students, loans }) => {
                 )}
               </div>
               {rankingData.length > 0 && (
-                <div style={{ height: '130px' }}>
+                <div style={{ height: '130px' }} className="mobile-hide">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart layout="vertical" data={rankingData}>
                       <XAxis type="number" hide />

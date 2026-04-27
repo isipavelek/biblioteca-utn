@@ -138,10 +138,131 @@ button {
 .gap-1 { gap: 0.25rem; }
 .gap-2 { gap: 0.5rem; }
 .gap-4 { gap: 1rem; }
+.gap-6 { gap: 1.5rem; }
 .flex-wrap { flex-wrap: wrap; }
 .block { display: block; }
 .relative { position: relative; }
 .absolute { position: absolute; }
+.w-full { width: 100%; }
+.overflow-hidden { overflow: hidden; }
+
+/* Responsive Media Queries */
+@media (max-width: 1024px) {
+  .nav-label { display: none; }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --glass-blur: blur(8px);
+  }
+
+  body {
+    font-size: 14px;
+  }
+
+  .main-container {
+    padding: 64px 0.75rem 5rem 0.75rem !important;
+  }
+
+  .glass-card {
+    border-radius: 1rem;
+    padding: 1rem !important;
+  }
+
+  /* Responsive Tables */
+  .overflow-x-auto {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Specific fix for Admin Tables on Mobile */
+  table thead {
+    display: none;
+  }
+
+  table tr {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border-glass);
+  }
+
+  table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0 !important;
+    text-align: right;
+  }
+
+  table td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    margin-right: 1rem;
+    text-align: left;
+  }
+
+  .mobile-stack {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 1rem !important;
+  }
+
+  .mobile-full {
+    width: 100% !important;
+  }
+
+  .mobile-hide {
+    display: none !important;
+  }
+
+  /* Navbar Adjustments */
+  nav {
+    padding: 0.5rem 1rem !important;
+    overflow-x: auto;
+    justify-content: space-between;
+  }
+
+  .nav-links {
+    gap: 1rem !important;
+  }
+}
+
+/* Dashboard & Grid Utilities */
+.grid-responsive-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+}
+
+@media (max-width: 1024px) {
+  .grid-responsive-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .grid-responsive-4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dashboard-main-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 0.75rem;
+  align-items: start;
+}
+
+@media (max-width: 850px) {
+  .dashboard-main-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }

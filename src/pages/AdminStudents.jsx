@@ -6,7 +6,7 @@ import { db } from '../firebase';
 import { doc, writeBatch } from 'firebase/firestore';
 import ConfirmDialog from '../components/ConfirmDialog';
 
-const AdminStudents = ({ students, setStudents, deleteStudent, loans = [], books = [] }) => {
+const AdminStudents = ({ students, setStudents, deleteStudent, updateStudent, loans = [], books = [] }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
   const [selectedHistory, setSelectedHistory] = useState(null);
@@ -118,9 +118,13 @@ const AdminStudents = ({ students, setStudents, deleteStudent, loans = [], books
     e.preventDefault();
     const studentData = { ...formData, name: `${formData.firstName} ${formData.lastName}`.trim() };
     if (editingStudent) {
-      setStudents(students.map(s => s.id === editingStudent.id ? { ...studentData, id: s.id } : s));
+      const updatedStudent = { ...studentData, id: editingStudent.id };
+      setStudents(students.map(s => s.id === editingStudent.id ? updatedStudent : s));
+      if (updateStudent) updateStudent(updatedStudent);
     } else {
-      setStudents([...students, { ...studentData, id: Date.now() }]);
+      const newStudent = { ...studentData, id: String(Date.now()) };
+      setStudents([...students, newStudent]);
+      if (updateStudent) updateStudent(newStudent);
     }
     setIsModalOpen(false);
   };
@@ -245,7 +249,7 @@ const AdminStudents = ({ students, setStudents, deleteStudent, loans = [], books
     const fullSearch = `${s.name} ${s.firstName} ${s.lastName} ${s.dni} ${s.legajo} ${s.grade} ${s.type}`.toLowerCase();
     if (!fullSearch.includes(searchTerm.toLowerCase())) return false;
     // Course filter
-    if (filterCourse !== 'all' && s.grade !== filterCourse) return false;
+    if (filterCourse !== 'all' && s.grade !== filterCourse && s.type !== filterCourse) return false;
     // Loan status filter
     if (filterLoans !== 'all') {
       const activeLoans = loans.filter(l => l.studentId === s.id && l.status === 'active');
@@ -259,32 +263,31 @@ const AdminStudents = ({ students, setStudents, deleteStudent, loans = [], books
     return true;
   });
 
-  // Unique grades from current students for the course dropdown
-  const availableGrades = ['all', ...new Set(students.map(s => s.grade).filter(Boolean))].sort();
+  // Unique grades and roles from current students for the course/role dropdown
+  const dynamicRoles = [...new Set(students.filter(s => s.type !== 'Alumno').map(s => s.type))];
+  const dynamicGrades = [...new Set(students.filter(s => s.type === 'Alumno').map(s => s.grade).filter(Boolean))].sort();
+  const availableGrades = ['all', ...dynamicGrades, ...dynamicRoles];
 
   return (
     <div className="animate-fade-in">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex justify-between items-center mb-8 mobile-stack">
         <div>
-          <h1 className="text-3xl">Gestión de Usuarios</h1>
-          <p className="text-muted text-sm mt-2">Personal y Alumnado de la institución</p>
+          <h1 className="text-3xl">Usuarios</h1>
+          <p className="text-muted text-sm mt-2 mobile-hide">Personal y Alumnado</p>
         </div>
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <button onClick={() => setDeleteAllConfirm(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', borderRadius: '0.75rem', background: 'rgba(239, 68, 68, 0.1)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
-            <Trash2 size={20} /> Borrar Todo
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }} className="w-full">
+          <button className="btn-primary flex-1" onClick={() => handleOpenModal()} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+            <Plus size={20} /> Nuevo <span className="mobile-hide">Usuario</span>
           </button>
-          <button onClick={handleCleanDuplicates} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', borderRadius: '0.75rem', background: 'rgba(99, 102, 241, 0.1)', color: '#6366f1', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
-            <Trash2 size={20} /> Limpiar Duplicados
+          <button onClick={() => setDeleteAllConfirm(true)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem 1rem', borderRadius: '0.75rem', background: 'rgba(239, 68, 68, 0.1)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+            <Trash2 size={20} /> <span className="mobile-hide">Borrar Todo</span>
           </button>
-          <button className="btn-primary" onClick={() => handleOpenModal()} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Plus size={20} /> Nuevo Usuario
-          </button>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <button className="glass-card" onClick={downloadTemplate} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', color: '#4ade80' }}>
-              <FileSpreadsheet size={20} /> Plantilla Oficial
+          <div style={{ display: 'flex', gap: '0.5rem' }} className="w-full">
+            <button className="glass-card flex-1" onClick={downloadTemplate} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem 1rem', color: '#4ade80' }}>
+              <FileSpreadsheet size={20} /> <span className="mobile-hide">Plantilla</span>
             </button>
-            <button className="glass-card" onClick={() => fileInputRef.current.click()} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', color: 'white' }}>
-              <Upload size={20} /> Importar Excel
+            <button className="glass-card flex-1" onClick={() => fileInputRef.current.click()} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', padding: '0.75rem 1rem', color: 'white' }}>
+              <Upload size={20} /> <span className="mobile-hide">Importar</span>
             </button>
             <input type="file" ref={fileInputRef} style={{ display: 'none' }} accept=".xlsx, .xls" onChange={handleFileChange} />
           </div>
@@ -315,7 +318,7 @@ const AdminStudents = ({ students, setStudents, deleteStudent, loans = [], books
             outline: 'none', cursor: 'pointer', fontSize: '0.82rem', fontWeight: '600',
           }}
         >
-          <option value="all" style={{ background: '#1e293b' }}>📚 Todos los cursos</option>
+          <option value="all" style={{ background: '#1e293b' }}>👥 Todos los cursos / Roles</option>
           {availableGrades.filter(g => g !== 'all').map(g => (
             <option key={g} value={g} style={{ background: '#1e293b' }}>{g}</option>
           ))}
@@ -367,9 +370,9 @@ const AdminStudents = ({ students, setStudents, deleteStudent, loans = [], books
             <tbody>
               {filteredStudents.map(student => (
                 <tr key={student.id} className="hover-card-row" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', transition: 'background 0.2s' }}>
-                  <td style={{ padding: '0.75rem 1rem' }}>
-                    <div className="flex items-center gap-3">
-                      <div style={{ 
+                  <td data-label="Usuario" style={{ padding: '0.75rem 1rem' }}>
+                    <div className="flex items-center gap-3" style={{ justifyContent: 'flex-end' }}>
+                      <div className="mobile-hide" style={{ 
                         background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
                         width: '32px', height: '32px', borderRadius: '50%',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -377,7 +380,7 @@ const AdminStudents = ({ students, setStudents, deleteStudent, loans = [], books
                       }}>
                         {(student.lastName || student.name || '?')[0].toUpperCase()}
                       </div>
-                      <div>
+                      <div style={{ textAlign: 'right' }}>
                         <div style={{ fontWeight: '600' }}>
                           {student.lastName ? `${student.lastName}, ${student.firstName}` : (student.name || 'Sin Nombre')}
                         </div>
@@ -385,8 +388,8 @@ const AdminStudents = ({ students, setStudents, deleteStudent, loans = [], books
                       </div>
                     </div>
                   </td>
-                  <td style={{ padding: '1rem 1.5rem' }}>
-                    <div className="flex flex-col gap-1">
+                  <td data-label="Curso/Rol" style={{ padding: '1rem 1.5rem' }}>
+                    <div className="flex flex-col gap-1" style={{ textAlign: 'right' }}>
                       <div style={{ fontSize: '0.875rem' }}>{student.grade || '---'}</div>
                       <div style={{ 
                         fontSize: '0.65rem', 
@@ -402,7 +405,7 @@ const AdminStudents = ({ students, setStudents, deleteStudent, loans = [], books
                       </div>
                     </div>
                   </td>
-                  <td style={{ padding: '0.75rem 1rem' }}>
+                  <td data-label="Préstamos" style={{ padding: '0.75rem 1rem' }}>
                     {(() => {
                       const today = new Date();
                       const activeLoans = loans
@@ -412,13 +415,13 @@ const AdminStudents = ({ students, setStudents, deleteStudent, loans = [], books
                         return <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Sin préstamos</span>;
                       }
                       return (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', alignItems: 'flex-end' }}>
                           {activeLoans.map(loan => {
                             const due = loan.dueDate ? new Date(loan.dueDate) : null;
                             const overdue = due && due < today;
                             const book = books ? books.find(b => String(b.id) === String(loan.bookId)) : null;
                             return (
-                              <div key={loan.id} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <div key={loan.id} style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
                                 <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: overdue ? '#f87171' : '#4ade80', flexShrink: 0 }} />
                                 <span style={{ fontSize: '0.7rem', color: overdue ? '#f87171' : 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '130px' }}>
                                   {book?.title?.slice(0, 18) || 'Libro'}
@@ -434,22 +437,22 @@ const AdminStudents = ({ students, setStudents, deleteStudent, loans = [], books
                       );
                     })()}
                   </td>
-                  <td style={{ padding: '0.75rem 1rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                  <td data-label="Documento" style={{ padding: '0.75rem 1rem', fontSize: '0.875rem', color: 'var(--text-muted)', textAlign: 'right' }}>
                     {student.dniType}: {student.dni || '---'}
                   </td>
-                  <td style={{ padding: '1rem 1.5rem' }}>
-                    <div className="flex flex-col gap-1">
-                      <div className="flex items-center gap-2" style={{ fontSize: '0.8rem' }}>
-                        <Mail size={12} className="text-muted" />
+                  <td data-label="Contacto" style={{ padding: '1rem 1.5rem' }}>
+                    <div className="flex flex-col gap-1" style={{ textAlign: 'right' }}>
+                      <div className="flex items-center gap-2" style={{ fontSize: '0.8rem', justifyContent: 'flex-end' }}>
+                        <Mail size={12} className="text-muted mobile-hide" />
                         <span>{student.instEmail || student.email || '---'}</span>
                       </div>
-                      <div className="flex items-center gap-2" style={{ fontSize: '0.8rem' }}>
-                        <Phone size={12} className="text-muted" />
+                      <div className="flex items-center gap-2" style={{ fontSize: '0.8rem', justifyContent: 'flex-end' }}>
+                        <Phone size={12} className="text-muted mobile-hide" />
                         <span>{student.cellphone || student.phone || '---'}</span>
                       </div>
                     </div>
                   </td>
-                  <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
+                  <td data-label="Acciones" style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
                     <div className="flex gap-2 justify-end">
                       <button onClick={() => setSelectedHistory(student)} className="text-muted p-2" title="Ver Historial" style={{ background: 'rgba(99, 102, 241, 0.05)', color: 'var(--primary)', borderRadius: '0.5rem', border: 'none', cursor: 'pointer' }}>
                         <History size={16} />
