@@ -122,10 +122,10 @@ const AdminDashboard = ({ books, students, loans }) => {
 
       {/* 4 Stat Cards */}
       <div style={s.statGrid}>
-        <StatCard icon={<Book size={16} />} label="Libros" value={literatureCount} color="#6366f1" />
+        <StatCard icon={<Book size={16} />} label="Títulos Únicos" value={books.length} color="#6366f1" />
+        <StatCard icon={<TrendingUp size={16} />} label="Total Ejemplares" value={totalItems} color="#4ade80" />
         <StatCard icon={<Monitor size={16} />} label="Equipos" value={equipmentCount} color="#ec4899" />
         <StatCard icon={<AlertTriangle size={16} />} label="Vencidos" value={overdueLoans.length} color="#f87171" highlight={overdueLoans.length > 0} />
-        <StatCard icon={<TrendingUp size={16} />} label="Uso" value={`${totalItems > 0 ? Math.round((loanedItems / totalItems) * 100) : 0}%`} color="#4ade80" />
       </div>
 
       {/* Main 2-column layout */}
