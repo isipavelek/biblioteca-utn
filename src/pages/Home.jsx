@@ -63,23 +63,27 @@ const Home = ({ books, categories }) => {
           >
             Todos
           </button>
-          {[...new Set(categories)].map(cat => (
+          {/* Deduplicate category names for the filter bar with defensive null checks */}
+          {[...new Set((categories || []).map(c => {
+            if (!c) return 'General';
+            return typeof c === 'object' ? (c.name || 'General') : c;
+          }))].sort().map(catName => (
             <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
+              key={catName}
+              onClick={() => setSelectedCategory(catName)}
               className="badge"
               style={{
-                background: selectedCategory === cat ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
-                color: selectedCategory === cat ? 'white' : 'var(--text-muted)',
+                background: selectedCategory === catName ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
+                color: selectedCategory === catName ? 'white' : 'var(--text-muted)',
                 cursor: 'pointer',
                 whiteSpace: 'nowrap',
                 padding: '0.4rem 0.8rem',
                 fontSize: '0.7rem',
                 border: '1px solid transparent',
-                borderColor: selectedCategory === cat ? 'transparent' : 'rgba(255,255,255,0.05)'
+                borderColor: selectedCategory === catName ? 'transparent' : 'rgba(255,255,255,0.05)'
               }}
             >
-              {cat}
+              {catName}
             </button>
           ))}
         </div>

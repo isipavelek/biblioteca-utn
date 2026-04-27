@@ -100,7 +100,11 @@ function App() {
         setStudents(finalStudents);
         setLoans(finalLoans);
         // Keep categories as objects to preserve 'code'
-        setCategories(finalCategories.map(c => typeof c === 'string' ? { id: c, name: c, code: '001' } : c));
+        // Keep categories as objects to preserve 'code', with defensive checks
+        setCategories((finalCategories || []).map(c => {
+          if (!c) return { id: 'unknown', name: 'Sin Categoría', code: '000' };
+          return typeof c === 'string' ? { id: c, name: c, code: '001' } : c;
+        }));
         setResourceTypes(finalResourceTypes);
         setAdmins(finalAdmins);
       } catch (error) {
