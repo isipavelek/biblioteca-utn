@@ -136,19 +136,45 @@ function App() {
       minHeight: '100vh',
       backgroundColor: '#0f172a',
       color: 'white',
-      padding: '1rem',
-      background: 'radial-gradient(circle at center, #1e293b 0%, #0f172a 100%)'
+      padding: '2rem',
+      background: 'radial-gradient(circle at center, #1e293b 0%, #0f172a 100%)',
+      fontFamily: "'Outfit', sans-serif"
     }}>
-      <div style={{ position: 'relative', marginBottom: '2rem' }}>
+      <div style={{ position: 'relative', width: '120px', height: '120px', marginBottom: '2.5rem' }}>
+        {/* Outer Ring */}
         <div className="animate-spin" style={{
-          width: '4rem',
-          height: '4rem',
-          borderRadius: '9999px',
-          borderTop: '2px solid var(--primary)',
-          borderBottom: '2px solid var(--primary)',
-          borderLeft: '2px solid transparent',
-          borderRight: '2px solid transparent'
+          position: 'absolute',
+          inset: 0,
+          borderRadius: '50%',
+          border: '3px solid transparent',
+          borderTopColor: 'var(--primary)',
+          borderBottomColor: 'var(--secondary)',
+          opacity: 0.8
         }}></div>
+        
+        {/* Inner Ring (Reverse rotation) */}
+        <div style={{
+          position: 'absolute',
+          inset: '12px',
+          borderRadius: '50%',
+          border: '2px solid transparent',
+          borderLeftColor: 'var(--accent)',
+          borderRightColor: 'var(--primary)',
+          animation: 'spin 1.5s linear infinite reverse',
+          opacity: 0.6
+        }}></div>
+
+        {/* Center Pulsing Glow */}
+        <div className="animate-pulse" style={{
+          position: 'absolute',
+          inset: '30px',
+          borderRadius: '50%',
+          background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
+          filter: 'blur(8px)',
+          opacity: 0.3
+        }}></div>
+
+        {/* Icon/Logo Placeholder */}
         <div style={{
           position: 'absolute',
           inset: 0,
@@ -156,42 +182,49 @@ function App() {
           alignItems: 'center',
           justifyContent: 'center'
         }}>
-          <div className="animate-pulse" style={{
-            height: '2.5rem',
-            width: '2.5rem',
-            borderRadius: '9999px',
-            backgroundColor: 'rgba(var(--primary-rgb), 0.1)'
-          }}></div>
+          <div style={{ 
+            width: '44px', 
+            height: '44px', 
+            background: 'white', 
+            borderRadius: '12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 0 30px rgba(99, 102, 241, 0.4)'
+          }}>
+            <div style={{ width: '24px', height: '18px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+               <div style={{ height: '4px', background: 'var(--primary)', borderRadius: '2px' }} />
+               <div style={{ height: '4px', background: 'var(--secondary)', borderRadius: '2px', width: '70%' }} />
+               <div style={{ height: '4px', background: 'var(--accent)', borderRadius: '2px' }} />
+            </div>
+          </div>
         </div>
       </div>
+
       <div style={{ textAlign: 'center' }} className="animate-fade-in">
-        <h2 style={{ 
-          fontSize: '1.5rem',
-          fontWeight: '700',
+        <h1 style={{ 
+          fontSize: '3rem', 
+          fontWeight: '800', 
           marginBottom: '0.5rem',
-          background: 'linear-gradient(135deg, var(--primary), var(--secondary))',
+          background: 'linear-gradient(to bottom, #fff 30%, #94a3b8 100%)',
           WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent'
+          WebkitTextFillColor: 'transparent',
+          letterSpacing: '-0.06em'
         }}>
           BiblioUTN
-        </h2>
-        <p style={{
-          color: 'var(--text-muted)',
-          fontSize: '0.875rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          justifyContent: 'center'
-        }}>
-          <span className="animate-pulse" style={{
-            display: 'inline-block',
-            width: '0.5rem',
-            height: '0.5rem',
-            borderRadius: '9999px',
-            backgroundColor: 'var(--primary)'
-          }}></span>
-          Sincronizando con la nube...
-        </p>
+        </h1>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}>
+          <div className="animate-pulse" style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)' }} />
+          <p style={{ 
+            fontSize: '0.9rem', 
+            color: 'var(--text-muted)', 
+            fontWeight: '600',
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase'
+          }}>
+            Sincronizando con la nube...
+          </p>
+        </div>
       </div>
     </div>
   );
