@@ -11,6 +11,7 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null });
   const [deleteAllConfirm, setDeleteAllConfirm] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [isGrouping, setIsGrouping] = useState(false);
   const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
@@ -148,40 +149,41 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
   const handleGroupDuplicates = async () => {
     if (!window.confirm('¿Deseas agrupar todos los libros duplicados? Se sumarán las cantidades y se actualizarán los préstamos automáticamente.')) return;
 
-    const { writeBatch, doc, db } = await import('../firebase');
-    const batch = writeBatch(db);
-    
-    const groups = {}; // key: title|author|catCode
-    const toDelete = [];
-    const toUpdateBooks = [];
-    const toUpdateLoans = [];
-
-    const normalize = (s) => String(s || '').trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
-    books.forEach(book => {
-      const key = `${normalize(book.title)}|${normalize(book.author)}|${book.categoryCode}`;
-      if (!groups[key]) {
-        groups[key] = { ...book };
-      } else {
-        const master = groups[key];
-        master.total_count += (book.total_count || 1);
-        master.available_count += (book.available_count || 1);
-        toDelete.push(book.id);
-        
-        // Find loans pointing to this duplicate
-        const relatedLoans = loans.filter(l => String(l.bookId) === String(book.id));
-        relatedLoans.forEach(loan => {
-          toUpdateLoans.push({ loanId: loan.id, newBookId: master.id });
-        });
-      }
-    });
-
-    if (toDelete.length === 0) {
-      alert('No se encontraron libros duplicados para agrupar.');
-      return;
-    }
-
+    setIsGrouping(true);
     try {
+      const { writeBatch, doc, db } = await import('../firebase');
+      const batch = writeBatch(db);
+      
+      const groups = {}; // key: title|author|catCode
+      const toDelete = [];
+      const toUpdateLoans = [];
+
+      const normalize = (s) => String(s || '').trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+      books.forEach(book => {
+        const key = `${normalize(book.title)}|${normalize(book.author)}|${book.categoryCode}`;
+        if (!groups[key]) {
+          groups[key] = { ...book };
+        } else {
+          const master = groups[key];
+          master.total_count += (book.total_count || 1);
+          master.available_count += (book.available_count || 1);
+          toDelete.push(book.id);
+          
+          // Find loans pointing to this duplicate
+          const relatedLoans = loans.filter(l => String(l.bookId) === String(book.id));
+          relatedLoans.forEach(loan => {
+            toUpdateLoans.push({ loanId: loan.id, newBookId: master.id });
+          });
+        }
+      });
+
+      if (toDelete.length === 0) {
+        alert('No se encontraron libros duplicados para agrupar.');
+        setIsGrouping(false);
+        return;
+      }
+
       // 1. Delete duplicates
       toDelete.forEach(id => {
         batch.delete(doc(db, 'books', String(id)));
@@ -208,10 +210,12 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
         }));
       }
 
-      alert(`¡Éxito! Se han agrupado los libros. Se eliminaron ${toDelete.length} duplicados y se actualizaron ${toUpdateLoans.length} préstamos.`);
+      alert(`✅ ¡Proceso Completado!\n\n- Libros duplicados eliminados: ${toDelete.length}\n- Préstamos re-vinculados: ${toUpdateLoans.length}\n- El inventario ahora está optimizado.`);
     } catch (err) {
       console.error(err);
-      alert('Error al agrupar duplicados. Revisa la consola.');
+      alert('❌ Error al agrupar duplicados. Revisa la consola para más detalles.');
+    } finally {
+      setIsGrouping(false);
     }
   };
 
@@ -370,8 +374,8 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
           <button className="btn-primary" onClick={() => handleOpenModal()} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Plus size={20} /> Nuevo Elemento
           </button>
-          <button className="glass-card" onClick={handleGroupDuplicates} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', color: 'var(--primary)' }}>
-            <Plus size={20} /> Agrupar Duplicados
+          <button className="glass-card" onClick={handleGroupDuplicates} disabled={isGrouping} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', color: 'var(--primary)', opacity: isGrouping ? 0.6 : 1 }}>
+            <Plus size={20} /> {isGrouping ? 'Procesando...' : 'Agrupar Duplicados'}
           </button>
           <button className="glass-card" onClick={handleDeleteAll} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', color: '#f87171', borderColor: 'rgba(239, 68, 68, 0.2)' }}>
             <Trash2 size={20} /> Borrar Todo
