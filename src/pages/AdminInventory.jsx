@@ -268,7 +268,11 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
                       setFormData({...formData, type: typeId, typeCode: typeObj?.code || '001'});
                     }}
                   >
-                    {resourceTypes.map(t => <option key={t.id} value={t.id}>{t.code} - {t.name}</option>)}
+                    {(resourceTypes || []).map(t => (
+                      <option key={t?.id || Math.random()} value={t?.id || ''}>
+                        {t?.code || '000'} - {t?.name || 'Tipo'}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 
@@ -279,11 +283,20 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
                     value={formData.category} 
                     onChange={(e) => {
                       const catName = e.target.value;
-                      const catObj = categories.find(c => c.name === catName);
+                      const catObj = (categories || []).find(c => (typeof c === 'object' ? c.name : c) === catName);
                       setFormData({...formData, category: catName, categoryCode: catObj?.code || '001'});
                     }}
                   >
-                    {categories.map(c => <option key={c.id} value={c.name}>{c.code} - {c.name}</option>)}
+                    {(categories || []).map(c => {
+                      const id = typeof c === 'object' ? c.id : c;
+                      const name = typeof c === 'object' ? c.name : c;
+                      const code = typeof c === 'object' ? (c.code || '001') : '001';
+                      return (
+                        <option key={id || Math.random()} value={name}>
+                          {code} - {name}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
 
