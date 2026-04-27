@@ -1,14 +1,15 @@
 export const initialCategories = [
-  "Geografía",
-  "Historia",
-  "Sociales",
-  "Naturales",
-  "Prácticas del Lenguaje",
-  "Inglés",
-  "Taller",
-  "Electrónica",
-  "Notebooks",
-  "Equipamiento"
+  { id: 'cat_001', name: 'Geografía', code: '001' },
+  { id: 'cat_002', name: 'Historia', code: '002' },
+  { id: 'cat_003', name: 'Sociales', code: '003' },
+  { id: 'cat_004', name: 'Naturales', code: '004' },
+  { id: 'cat_005', name: 'Prácticas del Lenguaje', code: '005' },
+  { id: 'cat_006', name: 'Inglés', code: '006' },
+  { id: 'cat_007', name: 'Taller', code: '007' },
+  { id: 'cat_008', name: 'Electrónica', code: '008' },
+  { id: 'cat_009', name: 'Equipamiento', code: '009' },
+  { id: 'cat_010', name: 'Notebooks', code: '010' },
+  { id: 'cat_011', name: 'Tecnología', code: '011' }
 ];
 
 export const initialBooks = [

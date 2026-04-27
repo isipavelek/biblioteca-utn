@@ -100,11 +100,18 @@ function App() {
         setStudents(finalStudents);
         setLoans(finalLoans);
         // Keep categories as objects to preserve 'code'
-        // Keep categories as objects to preserve 'code', with defensive checks
-        setCategories((finalCategories || []).map(c => {
-          if (!c) return { id: 'unknown', name: 'Sin Categoría', code: '000' };
-          return typeof c === 'string' ? { id: c, name: c, code: '001' } : c;
-        }));
+        // Keep categories as objects with unique sequential codes if missing
+        const mappedCategories = (finalCategories || []).map((c, idx) => {
+          if (!c) return { id: `cat_${idx}`, name: 'Sin Categoría', code: String(idx + 1).padStart(3, '0') };
+          const item = typeof c === 'string' ? { id: c, name: c } : c;
+          // If code is missing or it's the generic '001' for all, re-assign sequentially to fix the "all 001" issue
+          const needsNewCode = !item.code || (item.code === '001' && (finalCategories || []).every(cat => !cat.code || cat.code === '001'));
+          return {
+            ...item,
+            code: needsNewCode ? String(idx + 1).padStart(3, '0') : item.code
+          };
+        });
+        setCategories(mappedCategories);
         setResourceTypes(finalResourceTypes);
         setAdmins(finalAdmins);
       } catch (error) {
