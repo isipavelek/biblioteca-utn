@@ -11,10 +11,41 @@ const AdminCategories = ({ categories, setCategories, resourceTypes, setResource
   const [editingItem, setEditingItem] = useState(null);
   const [formData, setFormData] = useState({ name: '', code: '' });
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null });
-  const [cleaning, setCleaning] = useState(false);
-  
-  const syncInventoryCodes = async () => {
-    if (!window.confirm("¿Deseas sincronizar todos los códigos del inventario? Esto actualizará los códigos de todos los libros para que coincidan con las categorías y tipos actuales.")) return;
+  const resetToOfficialCategories = async () => {
+    if (!window.confirm("⚠️ ATENCIÓN: Esto borrará todas las categorías actuales y las reemplazará por la lista oficial. Los libros se mantendrán pero sus códigos podrían quedar desincronizados hasta que los limpies. ¿Continuar?")) return;
+    
+    setCleaning(true);
+    try {
+      const { initialCategories } = await import('../data');
+      const { getDocs, collection, writeBatch, doc, deleteDoc } = await import('firebase/firestore');
+      
+      // 1. Delete all current categories
+      const currentCats = await getDocs(collection(db, 'categories'));
+      const deleteBatch = writeBatch(db);
+      currentCats.docs.forEach(d => deleteBatch.delete(d.ref));
+      await deleteBatch.commit();
+
+      // 2. Add new ones
+      const addBatch = writeBatch(db);
+      initialCategories.forEach(cat => {
+        addBatch.set(doc(db, 'categories', cat.id), cat);
+      });
+      await addBatch.commit();
+
+      alert("Categorías reseteadas con éxito. Ahora sincronizaremos los códigos de los libros...");
+      
+      // 3. Trigger inventory sync automatically
+      await syncInventoryCodes(true); 
+    } catch (e) {
+      console.error(e);
+      alert("Error al resetear categorías.");
+    } finally {
+      setCleaning(false);
+    }
+  };
+
+  const syncInventoryCodes = async (silent = false) => {
+    if (!silent && !window.confirm("¿Deseas sincronizar todos los códigos del inventario? Esto actualizará los códigos de todos los libros para que coincidan con las categorías y tipos actuales.")) return;
     
     setCleaning(true);
     try {
@@ -23,9 +54,13 @@ const AdminCategories = ({ categories, setCategories, resourceTypes, setResource
       const batch = writeBatch(db);
       let count = 0;
 
+      // We need the latest categories for sync
+      const catsSnap = await getDocs(collection(db, 'categories'));
+      const latestCats = catsSnap.docs.map(d => d.data());
+
       booksSnap.docs.forEach(d => {
         const book = d.data();
-        const catObj = categories.find(c => c.name === book.category);
+        const catObj = latestCats.find(c => c.name.toUpperCase().trim() === book.category.toUpperCase().trim());
         const typeObj = resourceTypes.find(t => t.id === book.type || t.name === book.type);
         
         let changed = false;
@@ -33,6 +68,7 @@ const AdminCategories = ({ categories, setCategories, resourceTypes, setResource
         
         if (catObj && book.categoryCode !== catObj.code) {
           updatedBook.categoryCode = catObj.code;
+          updatedBook.category = catObj.name; // Normalize name too
           changed = true;
         }
         if (typeObj && book.typeCode !== typeObj.code) {
@@ -48,14 +84,15 @@ const AdminCategories = ({ categories, setCategories, resourceTypes, setResource
 
       if (count > 0) {
         await batch.commit();
-        alert(`Sincronización completada. Se actualizaron ${count} elementos. Recarga la página para ver los cambios.`);
+        if (!silent) alert(`Sincronización completada. Se actualizaron ${count} elementos.`);
         window.location.reload();
       } else {
-        alert("Todos los códigos ya están sincronizados correctamente.");
+        if (!silent) alert("Todos los códigos ya están sincronizados correctamente.");
+        if (silent) window.location.reload();
       }
     } catch (e) {
       console.error(e);
-      alert("Error durante la sincronización.");
+      if (!silent) alert("Error durante la sincronización.");
     } finally {
       setCleaning(false);
     }
@@ -157,18 +194,26 @@ const AdminCategories = ({ categories, setCategories, resourceTypes, setResource
         <div style={{ display: 'flex', gap: '0.75rem' }}>
           <button
             className="glass-card"
-            onClick={syncInventoryCodes}
+            onClick={resetToOfficialCategories}
+            disabled={cleaning}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', fontSize: '0.85rem', color: '#f87171', borderColor: 'rgba(248, 113, 113, 0.3)' }}
+          >
+            <Layers size={16} /> Resetear a Lista Oficial
+          </button>
+          <button
+            className="glass-card"
+            onClick={() => syncInventoryCodes()}
             disabled={cleaning}
             style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', fontSize: '0.85rem', color: '#6366f1', borderColor: 'rgba(99, 102, 241, 0.3)' }}
           >
-            <Eraser size={16} /> {cleaning ? 'Sincronizando...' : 'Limpiar Códigos Inventario'}
+            <Eraser size={16} /> {cleaning ? 'Procesando...' : 'Sincronizar Códigos'}
           </button>
           <button
             className="btn-primary"
             onClick={() => handleOpenModal()}
             style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', fontSize: '0.85rem' }}
           >
-            <Plus size={16} /> Nuevo {activeTab === 'categories' ? 'Categoría' : 'Tipo'}
+            <Plus size={16} /> Nuevo
           </button>
         </div>
       </div>
