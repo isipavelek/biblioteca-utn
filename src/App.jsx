@@ -104,8 +104,13 @@ function App() {
         const mappedCategories = (finalCategories || []).map((c, idx) => {
           if (!c) return { id: `cat_${idx}`, name: 'Sin Categoría', code: String(idx + 1).padStart(3, '0') };
           const item = typeof c === 'string' ? { id: c, name: c } : c;
-          // If code is missing or it's the generic '001' for all, re-assign sequentially to fix the "all 001" issue
-          const needsNewCode = !item.code || (item.code === '001' && (finalCategories || []).every(cat => !cat.code || cat.code === '001'));
+          
+          if (!item || !item.name) return { id: `cat_${idx}`, name: 'Sin Categoría', code: String(idx + 1).padStart(3, '0') };
+          
+          // Safer check for the "all 001" issue
+          const isLegacy = (finalCategories || []).every(cat => !cat || typeof cat === 'string' || !cat.code || cat.code === '001');
+          const needsNewCode = !item.code || (item.code === '001' && isLegacy);
+          
           return {
             ...item,
             code: needsNewCode ? String(idx + 1).padStart(3, '0') : item.code
@@ -248,7 +253,7 @@ function App() {
   );
 
   return (
-    <Router>
+    <Router basename="/biblioteca-utn">
       <div style={{ minHeight: '100vh' }}>
         <Navbar currentUser={currentUser} onLogout={handleLogout} />
         {currentUser && (

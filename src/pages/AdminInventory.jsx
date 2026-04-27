@@ -9,6 +9,7 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBook, setEditingBook] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null });
+  const [deleteAllConfirm, setDeleteAllConfirm] = useState(false);
   const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
@@ -132,6 +133,17 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
     setDeleteConfirm({ isOpen: false, id: null });
   };
 
+  const handleDeleteAll = () => {
+    setDeleteAllConfirm(true);
+  };
+
+  const confirmDeleteAll = () => {
+    // Delete one by one through the prop or provide a bulk delete if available
+    books.forEach(b => deleteItem(b.id));
+    setBooks([]);
+    setDeleteAllConfirm(false);
+  };
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -157,6 +169,9 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
         <div style={{ display: 'flex', gap: '1rem' }}>
           <button className="btn-primary" onClick={() => handleOpenModal()} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Plus size={20} /> Nuevo Elemento
+          </button>
+          <button className="glass-card" onClick={handleDeleteAll} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', color: '#f87171', borderColor: 'rgba(239, 68, 68, 0.2)' }}>
+            <Trash2 size={20} /> Borrar Todo
           </button>
           <button className="glass-card" onClick={() => fileInputRef.current.click()} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', color: '#4ade80' }}>
             <FileSpreadsheet size={20} /> Importar Biblioteca
@@ -361,6 +376,15 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
         onConfirm={confirmDelete}
         title="¿Eliminar elemento?"
         message="¿Estás seguro de que deseas eliminar este elemento del inventario? Esta acción no se puede deshacer."
+      />
+
+      <ConfirmDialog 
+        isOpen={deleteAllConfirm}
+        onClose={() => setDeleteAllConfirm(false)}
+        onConfirm={confirmDeleteAll}
+        title="⚠️ ¿ELIMINAR TODO EL INVENTARIO?"
+        message="Esta acción borrará ABSOLUTAMENTE TODOS los libros y equipos del sistema de forma permanente. ¿Estás COMPLETAMENTE seguro?"
+        confirmText="SÍ, ELIMINAR TODO"
       />
     </div>
   );

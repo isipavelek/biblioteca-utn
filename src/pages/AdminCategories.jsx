@@ -1,74 +1,72 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Trash2, Edit, Tag, Eraser, Layers } from 'lucide-react';
+import { Plus, Trash2, Edit, RefreshCcw, Database } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { db } from '../firebase';
-import { collection, getDocs, deleteDoc, doc, setDoc } from 'firebase/firestore';
 
-const AdminCategories = ({ categories, setCategories, resourceTypes, setResourceTypes }) => {
+const AdminCategories = ({ categories = [], setCategories, resourceTypes = [], setResourceTypes }) => {
   const [activeTab, setActiveTab] = useState('categories'); // 'categories' or 'types'
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [formData, setFormData] = useState({ name: '', code: '' });
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, item: null });
+  const [cleaning, setCleaning] = useState(false);
+
   const resetToOfficialCategories = async () => {
-    if (!window.confirm("⚠️ ATENCIÓN: Esto borrará todas las categorías actuales y las reemplazará por la lista oficial. Los libros se mantendrán pero sus códigos podrían quedar desincronizados hasta que los limpies. ¿Continuar?")) return;
+    if (!window.confirm("⚠️ ATENCIÓN: Esto borrará todas las categorías actuales y las reemplazará por la lista oficial. ¿Continuar?")) return;
     
     setCleaning(true);
     try {
       const { initialCategories } = await import('../data');
-      const { getDocs, collection, writeBatch, doc, deleteDoc } = await import('firebase/firestore');
+      const { getDocs, collection, writeBatch, doc } = await import('firebase/firestore');
       
-      // 1. Delete all current categories
       const currentCats = await getDocs(collection(db, 'categories'));
       const deleteBatch = writeBatch(db);
       currentCats.docs.forEach(d => deleteBatch.delete(d.ref));
       await deleteBatch.commit();
 
-      // 2. Add new ones
       const addBatch = writeBatch(db);
-      initialCategories.forEach(cat => {
-        addBatch.set(doc(db, 'categories', cat.id), cat);
+      (initialCategories || []).forEach(cat => {
+        if (cat && cat.id) addBatch.set(doc(db, 'categories', String(cat.id)), cat);
       });
       await addBatch.commit();
 
-      alert("Categorías reseteadas con éxito. Ahora sincronizaremos los códigos de los libros...");
-      
-      // 3. Trigger inventory sync automatically
+      alert("Categorías reseteadas. Sincronizando inventario...");
       await syncInventoryCodes(true); 
     } catch (e) {
       console.error(e);
-      alert("Error al resetear categorías.");
+      alert("Error al resetear.");
     } finally {
       setCleaning(false);
     }
   };
 
   const syncInventoryCodes = async (silent = false) => {
-    if (!silent && !window.confirm("¿Deseas sincronizar todos los códigos del inventario? Esto actualizará los códigos de todos los libros para que coincidan con las categorías y tipos actuales.")) return;
+    if (!silent && !window.confirm("¿Sincronizar códigos de inventario ahora?")) return;
     
     setCleaning(true);
     try {
       const { getDocs, collection, writeBatch, doc } = await import('firebase/firestore');
       const booksSnap = await getDocs(collection(db, 'books'));
+      const catsSnap = await getDocs(collection(db, 'categories'));
+      
+      const latestCats = catsSnap.docs.map(d => ({ ...d.data(), id: d.id }));
       const batch = writeBatch(db);
       let count = 0;
 
-      // We need the latest categories for sync
-      const catsSnap = await getDocs(collection(db, 'categories'));
-      const latestCats = catsSnap.docs.map(d => d.data());
-
       booksSnap.docs.forEach(d => {
         const book = d.data();
-        const catObj = latestCats.find(c => c.name.toUpperCase().trim() === book.category.toUpperCase().trim());
-        const typeObj = resourceTypes.find(t => t.id === book.type || t.name === book.type);
+        if (!book) return;
+
+        const catObj = latestCats.find(c => c.name?.toUpperCase().trim() === book.category?.toUpperCase().trim());
+        const typeObj = (resourceTypes || []).find(t => t.id === book.type || t.name === book.type);
         
         let changed = false;
         const updatedBook = { ...book };
         
         if (catObj && book.categoryCode !== catObj.code) {
           updatedBook.categoryCode = catObj.code;
-          updatedBook.category = catObj.name; // Normalize name too
+          updatedBook.category = catObj.name;
           changed = true;
         }
         if (typeObj && book.typeCode !== typeObj.code) {
@@ -82,17 +80,12 @@ const AdminCategories = ({ categories, setCategories, resourceTypes, setResource
         }
       });
 
-      if (count > 0) {
-        await batch.commit();
-        if (!silent) alert(`Sincronización completada. Se actualizaron ${count} elementos.`);
-        window.location.reload();
-      } else {
-        if (!silent) alert("Todos los códigos ya están sincronizados correctamente.");
-        if (silent) window.location.reload();
-      }
+      if (count > 0) await batch.commit();
+      if (!silent) alert(`Sincronización completada: ${count} items.`);
+      window.location.reload();
     } catch (e) {
       console.error(e);
-      if (!silent) alert("Error durante la sincronización.");
+      if (!silent) alert("Error de sincronización.");
     } finally {
       setCleaning(false);
     }
@@ -101,11 +94,11 @@ const AdminCategories = ({ categories, setCategories, resourceTypes, setResource
   const handleOpenModal = (item = null) => {
     if (item) {
       setEditingItem(item);
-      setFormData({ name: item.name, code: item.code });
+      setFormData({ name: item.name || '', code: item.code || '' });
     } else {
       setEditingItem(null);
-      const list = activeTab === 'categories' ? categories : resourceTypes;
-      const nextNum = list.length > 0 ? Math.max(...list.map(i => parseInt(i.code) || 0)) + 1 : 1;
+      const list = activeTab === 'categories' ? (categories || []) : (resourceTypes || []);
+      const nextNum = list.length > 0 ? Math.max(...list.map(i => parseInt(i?.code) || 0)) + 1 : 1;
       setFormData({ name: '', code: String(nextNum).padStart(3, '0') });
     }
     setIsModalOpen(true);
@@ -113,190 +106,88 @@ const AdminCategories = ({ categories, setCategories, resourceTypes, setResource
 
   const handleSave = (e) => {
     e.preventDefault();
-    const trimmedName = formData.name.trim();
-    const trimmedCode = formData.code.trim().padStart(3, '0');
-    
-    if (!trimmedName || !trimmedCode) return;
+    if (!formData.name || !formData.code) return;
 
     const newItem = { 
       id: editingItem ? editingItem.id : (activeTab === 'categories' ? 'cat_' : 'type_') + Date.now(),
-      name: trimmedName, 
-      code: trimmedCode 
+      name: formData.name.trim(), 
+      code: formData.code.trim().padStart(3, '0') 
     };
 
     if (activeTab === 'categories') {
-      if (editingItem) {
-        setCategories(categories.map(c => c.id === editingItem.id ? newItem : c));
-      } else {
-        setCategories([...categories, newItem]);
-      }
+      if (editingItem) setCategories(categories.map(c => c.id === editingItem.id ? newItem : c));
+      else setCategories([...categories, newItem]);
     } else {
-      if (editingItem) {
-        setResourceTypes(resourceTypes.map(t => t.id === editingItem.id ? newItem : t));
-      } else {
-        setResourceTypes([...resourceTypes, newItem]);
-      }
+      if (editingItem) setResourceTypes(resourceTypes.map(t => t.id === editingItem.id ? newItem : t));
+      else setResourceTypes([...resourceTypes, newItem]);
     }
     setIsModalOpen(false);
   };
 
-  const handleDelete = (item) => setDeleteConfirm({ isOpen: true, item });
-
-  const confirmDelete = () => {
-    if (deleteConfirm.item) {
-      if (activeTab === 'categories') {
-        setCategories(categories.filter(c => c.id !== deleteConfirm.item.id));
-      } else {
-        setResourceTypes(resourceTypes.filter(t => t.id !== deleteConfirm.item.id));
-      }
-      setDeleteConfirm({ isOpen: false, item: null });
-    }
-  };
-
-  const currentList = activeTab === 'categories' ? categories : resourceTypes;
+  const currentList = activeTab === 'categories' ? (categories || []) : (resourceTypes || []);
 
   return (
-    <div className="animate-fade-in" style={{ maxWidth: '800px', margin: '0 auto' }}>
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '0.5rem' }}>
-        <button 
-          onClick={() => setActiveTab('categories')}
-          style={{ 
-            background: 'none', color: activeTab === 'categories' ? 'var(--primary)' : 'var(--text-muted)', 
-            fontWeight: '700', fontSize: '1rem', padding: '0.5rem 1rem', position: 'relative' 
-          }}
-        >
-          Categorías
-          {activeTab === 'categories' && <div style={{ position: 'absolute', bottom: '-0.6rem', left: 0, right: 0, height: '2px', background: 'var(--primary)' }} />}
-        </button>
-        <button 
-          onClick={() => setActiveTab('types')}
-          style={{ 
-            background: 'none', color: activeTab === 'types' ? 'var(--primary)' : 'var(--text-muted)', 
-            fontWeight: '700', fontSize: '1rem', padding: '0.5rem 1rem', position: 'relative' 
-          }}
-        >
-          Tipos de Recurso
-          {activeTab === 'types' && <div style={{ position: 'absolute', bottom: '-0.6rem', left: 0, right: 0, height: '2px', background: 'var(--primary)' }} />}
-        </button>
+    <div className="animate-fade-in" style={{ maxWidth: '900px', margin: '0 auto' }}>
+      <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+        <button onClick={() => setActiveTab('categories')} style={{ background: 'none', color: activeTab === 'categories' ? 'var(--primary)' : 'var(--text-muted)', fontWeight: '700', padding: '0.8rem 1rem', cursor: 'pointer' }}>Categorías</button>
+        <button onClick={() => setActiveTab('types')} style={{ background: 'none', color: activeTab === 'types' ? 'var(--primary)' : 'var(--text-muted)', fontWeight: '700', padding: '0.8rem 1rem', cursor: 'pointer' }}>Tipos</button>
       </div>
 
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
         <div>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: '800', margin: 0 }}>
-            {activeTab === 'categories' ? 'Gestión de Categorías' : 'Gestión de Tipos'}
-          </h1>
-          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-            {currentList.length} elementos registrados
-          </p>
+          <h1 style={{ fontSize: '1.8rem', margin: 0 }}>{activeTab === 'categories' ? 'Categorías' : 'Tipos'}</h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{currentList.length} registrados</p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <button
-            className="glass-card"
-            onClick={resetToOfficialCategories}
-            disabled={cleaning}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', fontSize: '0.85rem', color: '#f87171', borderColor: 'rgba(248, 113, 113, 0.3)' }}
-          >
-            <Layers size={16} /> Resetear a Lista Oficial
+          <button className="glass-card" onClick={resetToOfficialCategories} disabled={cleaning} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', fontSize: '0.8rem', color: '#f87171' }}>
+            <Database size={16} /> Reset Oficial
           </button>
-          <button
-            className="glass-card"
-            onClick={() => syncInventoryCodes()}
-            disabled={cleaning}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', fontSize: '0.85rem', color: '#6366f1', borderColor: 'rgba(99, 102, 241, 0.3)' }}
-          >
-            <Eraser size={16} /> {cleaning ? 'Procesando...' : 'Sincronizar Códigos'}
+          <button className="glass-card" onClick={() => syncInventoryCodes()} disabled={cleaning} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', fontSize: '0.8rem', color: '#6366f1' }}>
+            <RefreshCcw size={16} /> {cleaning ? '...' : 'Sincronizar'}
           </button>
-          <button
-            className="btn-primary"
-            onClick={() => handleOpenModal()}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', fontSize: '0.85rem' }}
-          >
+          <button className="btn-primary" onClick={() => handleOpenModal()} style={{ padding: '0.5rem 1rem', fontSize: '0.8rem' }}>
             <Plus size={16} /> Nuevo
           </button>
         </div>
       </div>
 
-      {/* List */}
       <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left' }}>
-              <th style={{ padding: '0.75rem 1rem', fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Código</th>
-              <th style={{ padding: '0.75rem 1rem', fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Nombre</th>
-              <th style={{ padding: '0.75rem 1rem', fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', textAlign: 'right' }}>Acciones</th>
+            <tr style={{ background: 'rgba(255,255,255,0.02)', textAlign: 'left' }}>
+              <th style={{ padding: '1rem', fontSize: '0.7rem', color: 'var(--text-muted)' }}>CÓDIGO</th>
+              <th style={{ padding: '1rem', fontSize: '0.7rem', color: 'var(--text-muted)' }}>NOMBRE</th>
+              <th style={{ padding: '1rem', textAlign: 'right', fontSize: '0.7rem', color: 'var(--text-muted)' }}>ACCIONES</th>
             </tr>
           </thead>
           <tbody>
-            {(currentList || []).map((item, index) => {
-              if (!item || typeof item !== 'object') return null;
-              return (
-                <tr key={item.id || index} style={{ borderBottom: index < currentList.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-                  <td style={{ padding: '0.75rem 1rem' }}>
-                    <code style={{ background: 'rgba(99,102,241,0.1)', color: 'var(--primary)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.85rem' }}>
-                      {item.code || '---'}
-                    </code>
-                  </td>
-                  <td style={{ padding: '0.75rem 1rem', fontWeight: '500' }}>{item.name || 'Sin Nombre'}</td>
-                  <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
-                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                      <button onClick={() => handleOpenModal(item)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', padding: '0.4rem', borderRadius: '0.5rem', color: 'var(--text-muted)', cursor: 'pointer' }}>
-                        <Edit size={14} />
-                      </button>
-                      <button onClick={() => handleDelete(item)} style={{ background: 'rgba(239,68,68,0.1)', border: 'none', padding: '0.4rem', borderRadius: '0.5rem', color: '#f87171', cursor: 'pointer' }}>
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
+            {currentList.map((item, idx) => item && (
+              <tr key={item.id || idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <td style={{ padding: '1rem' }}><code style={{ color: 'var(--primary)' }}>{item.code || '---'}</code></td>
+                <td style={{ padding: '1rem', fontWeight: '600' }}>{item.name || '---'}</td>
+                <td style={{ padding: '1rem', textAlign: 'right' }}>
+                  <button onClick={() => handleOpenModal(item)} style={{ background: 'none', color: 'var(--text-muted)', marginRight: '0.5rem' }}><Edit size={16} /></button>
+                  <button onClick={() => setDeleteConfirm({ isOpen: true, item })} style={{ background: 'none', color: '#f87171' }}><Trash2 size={16} /></button>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
-        {currentList.length === 0 && (
-          <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-            No hay elementos registrados.
-          </div>
-        )}
       </div>
 
-      {/* Modal */}
       {isModalOpen && createPortal(
-        <div style={{ position: 'fixed', inset: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div onClick={() => setIsModalOpen(false)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)' }} />
-          <div style={{ position: 'relative', background: '#1e293b', borderRadius: '1rem', border: '1px solid rgba(255,255,255,0.1)', padding: '2rem', width: '100%', maxWidth: '400px' }}>
-            <h2 style={{ fontWeight: '700', marginBottom: '1.5rem' }}>
-              {editingItem ? 'Editar' : 'Nuevo'} {activeTab === 'categories' ? 'Categoría' : 'Tipo'}
-            </h2>
-            <form onSubmit={handleSave}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                <div>
-                  <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>Código (3 dígitos)</label>
-                  <input 
-                    className="input-field" 
-                    required maxLength="3"
-                    value={formData.code} 
-                    onChange={e => setFormData({ ...formData, code: e.target.value.replace(/\D/g,'') })} 
-                    placeholder="Ej: 001" 
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem' }}>Nombre</label>
-                  <input 
-                    className="input-field" 
-                    required autoFocus 
-                    value={formData.name} 
-                    onChange={e => setFormData({ ...formData, name: e.target.value })} 
-                    placeholder="Ej: Biología" 
-                  />
-                </div>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div onClick={() => setIsModalOpen(false)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.8)' }} />
+          <div className="glass-card" style={{ position: 'relative', width: '350px', padding: '2rem', background: '#1e293b' }}>
+            <h2 style={{ marginBottom: '1.5rem' }}>{editingItem ? 'Editar' : 'Nuevo'}</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <input className="input-field" placeholder="Código" maxLength="3" value={formData.code} onChange={e => setFormData({...formData, code: e.target.value.replace(/\D/g,'')})} />
+              <input className="input-field" placeholder="Nombre" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                <button onClick={() => setIsModalOpen(false)} style={{ flex: 1, padding: '0.6rem', background: 'none', color: 'white' }}>Cerrar</button>
+                <button onClick={handleSave} className="btn-primary" style={{ flex: 1 }}>Guardar</button>
               </div>
-              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '2rem' }}>
-                <button type="button" onClick={() => setIsModalOpen(false)} style={{ flex: 1, padding: '0.75rem', borderRadius: '0.75rem', background: 'rgba(255,255,255,0.07)', border: 'none', color: 'white', cursor: 'pointer', fontWeight: '600' }}>Cancelar</button>
-                <button type="submit" className="btn-primary" style={{ flex: 1, padding: '0.75rem', borderRadius: '0.75rem', fontWeight: '600' }}>Guardar</button>
-              </div>
-            </form>
+            </div>
           </div>
         </div>,
         document.body
@@ -305,9 +196,13 @@ const AdminCategories = ({ categories, setCategories, resourceTypes, setResource
       <ConfirmDialog
         isOpen={deleteConfirm.isOpen}
         onClose={() => setDeleteConfirm({ isOpen: false, item: null })}
-        onConfirm={confirmDelete}
-        title="¿Confirmar eliminación?"
-        message={`¿Estás seguro de eliminar "${deleteConfirm.item?.name}"? Esto podría afectar la visualización de códigos en el inventario.`}
+        onConfirm={() => {
+          if (activeTab === 'categories') setCategories(categories.filter(c => c.id !== deleteConfirm.item.id));
+          else setResourceTypes(resourceTypes.filter(t => t.id !== deleteConfirm.item.id));
+          setDeleteConfirm({ isOpen: false, item: null });
+        }}
+        title="Eliminar"
+        message="¿Estás seguro?"
       />
     </div>
   );
