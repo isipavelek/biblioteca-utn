@@ -151,8 +151,9 @@ function App() {
         )}
         <main style={{ paddingTop: '64px', paddingLeft: '1.5rem', paddingRight: '1.5rem', paddingBottom: '2rem' }}>
           <Routes>
-            <Route path="/" element={<Home books={books} categories={categories} />} />
-            <Route path="/info" element={<Info />} />
+            <Route path="/" element={<Info />} />
+            <Route path="/search" element={<Home books={books} categories={categories} />} />
+            <Route path="/info" element={<Navigate to="/" />} />
             <Route path="/login" element={<LoginPage setCurrentUser={setCurrentUser} />} />
             <Route path="/admin" element={<ProtectedRoute><AdminDashboard books={books} students={students} loans={loans} /></ProtectedRoute>} />
             <Route path="/admin/inventory" element={<ProtectedRoute><AdminInventory books={books} setBooks={(nb)=>{setBooks(nb); nb.forEach(b=>syncItem('books',b));}} deleteItem={(id)=>deleteItem('books',id)} categories={categories} resourceTypes={resourceTypes} /></ProtectedRoute>} />
