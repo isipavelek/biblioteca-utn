@@ -24,6 +24,7 @@ function App() {
   const [students, setStudents] = useState([]);
   const [loans, setLoans] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [resourceTypes, setResourceTypes] = useState([]);
   const [admins, setAdmins] = useState([]);
 
   // Auth Observer
@@ -39,7 +40,7 @@ function App() {
     const fetchData = async () => {
       console.log("Fetching data from Firebase... Auth status:", currentUser ? "Authenticated" : "Guest");
       try {
-        const collections = ['books', 'students', 'loans', 'categories', 'admins'];
+        const collections = ['books', 'students', 'loans', 'categories', 'admins', 'resource_types'];
         const results = {};
 
         for (const colName of collections) {
@@ -69,12 +70,9 @@ function App() {
               console.log(`Migrating ${key} to Firebase...`);
               const batch = writeBatch(db);
               dataToMigrate.forEach((item, idx) => {
-                // Use a stable ID for categories if they are strings, or use their provided ID
                 const id = typeof item === 'string' ? item : String(item.id || idx);
                 const itemRef = doc(db, key, id);
-                
-                // Firestore REQUIRES objects. If item is a string (common in categories), wrap it.
-                const dataObject = typeof item === 'object' ? item : { name: item, id: id };
+                const dataObject = typeof item === 'object' ? item : { name: item, id: id, code: String(idx + 1).padStart(3, '0') };
                 batch.set(itemRef, dataObject);
               });
               await batch.commit();
@@ -87,14 +85,23 @@ function App() {
         const finalBooks = await checkAndMigrate('books', results.books, initialBooks);
         const finalStudents = await checkAndMigrate('students', results.students, initialStudents);
         const finalLoans = await checkAndMigrate('loans', results.loans, initialLoans);
+        
+        // Resource Types Migration
+        const initialResourceTypes = [
+          { id: 'book', name: 'Libro / Manual', code: '001' },
+          { id: 'equipment', name: 'Equipamiento / Tecnología', code: '002' }
+        ];
+        const finalResourceTypes = await checkAndMigrate('resource_types', results.resource_types, initialResourceTypes);
+
         const finalCategories = await checkAndMigrate('categories', results.categories, initialCategories);
         const finalAdmins = await checkAndMigrate('admins', results.admins, initialAdmins);
 
         setBooks(finalBooks);
         setStudents(finalStudents);
         setLoans(finalLoans);
-        // Normalize categories back to an array of strings for the UI if needed
-        setCategories(finalCategories.map(c => typeof c === 'object' ? (c.name || c.id) : c));
+        // Keep categories as objects to preserve 'code'
+        setCategories(finalCategories.map(c => typeof c === 'string' ? { id: c, name: c, code: '001' } : c));
+        setResourceTypes(finalResourceTypes);
         setAdmins(finalAdmins);
       } catch (error) {
         console.error("Critical error fetching from Firebase:", error);
@@ -104,7 +111,7 @@ function App() {
     };
 
     fetchData();
-  }, [currentUser]); // Re-fetch when user logs in/out
+  }, [currentUser]); 
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -269,6 +276,7 @@ function App() {
                   }} 
                   deleteItem={(id) => deleteItem('books', id)}
                   categories={categories} 
+                  resourceTypes={resourceTypes}
                 />
               </ProtectedRoute>
             } />
@@ -313,8 +321,13 @@ function App() {
                   categories={categories} 
                   setCategories={(newCats) => {
                     setCategories(newCats);
-                    newCats.forEach((c) => setDoc(doc(db, 'categories', String(c)), { name: c }));
+                    newCats.forEach(c => syncItem('categories', c));
                   }} 
+                  resourceTypes={resourceTypes}
+                  setResourceTypes={(newTypes) => {
+                    setResourceTypes(newTypes);
+                    newTypes.forEach(t => syncItem('resource_types', t));
+                  }}
                 />
               </ProtectedRoute>
             } />
