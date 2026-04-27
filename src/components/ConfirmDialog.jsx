@@ -94,8 +94,8 @@ const ConfirmDialog = ({ isOpen, onClose, onConfirm, title, message, confirmText
             Cancelar
           </button>
           <button 
-            onClick={() => {
-              onConfirm();
+            onClick={async () => {
+              await onConfirm();
               onClose();
             }} 
             style={{ 
