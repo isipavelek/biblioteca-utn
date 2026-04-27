@@ -192,14 +192,15 @@ const AdminLoans = ({ loans, setLoans, books, setBooks, students, deleteLoan }) 
     setDeleteConfirm({ isOpen: true, id });
   };
 
-  const confirmDelete = () => {
-    const loanToDelete = loans.find(l => l.id === deleteConfirm.id);
+  const confirmDelete = async () => {
+    const loanId = String(deleteConfirm.id);
+    const loanToDelete = loans.find(l => String(l.id) === loanId);
     if (loanToDelete) {
       if (loanToDelete.status === 'active') {
-        setBooks(books.map(b => b.id === loanToDelete.bookId ? { ...b, available_count: b.available_count + 1 } : b));
+        setBooks(books.map(b => String(b.id) === String(loanToDelete.bookId) ? { ...b, available_count: b.available_count + 1 } : b));
       }
-      if (deleteLoan) deleteLoan(deleteConfirm.id);
-      setLoans(loans.filter(l => l.id !== deleteConfirm.id));
+      if (deleteLoan) await deleteLoan(loanId);
+      setLoans(loans.filter(l => String(l.id) !== loanId));
       setDeleteConfirm({ isOpen: false, id: null });
     }
   };

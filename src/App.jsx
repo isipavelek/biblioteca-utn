@@ -45,7 +45,10 @@ function App() {
         for (const colName of collections) {
           try {
             const querySnapshot = await getDocs(collection(db, colName));
-            results[colName] = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+            results[colName] = querySnapshot.docs.map(doc => {
+              const data = doc.data();
+              return { ...data, id: String(doc.id) };
+            });
           } catch (colErr) {
             results[colName] = [];
           }
@@ -144,8 +147,8 @@ function App() {
               const updatedBook = { ...loanedBook, available_count: (loanedBook.available_count || 1) - 1 };
               setLoans([...loans, newLoan]);
               setBooks(books.map(b => b.id === loanedBook.id ? updatedBook : b));
-              await setDoc(doc(db, 'loans', String(newLoan.id)), newLoan);
-              await setDoc(doc(db, 'books', String(updatedBook.id)), updatedBook);
+              await setDoc(doc(db, 'loans', String(newLoan.id)), { ...newLoan, id: String(newLoan.id) });
+              await setDoc(doc(db, 'books', String(updatedBook.id)), { ...updatedBook, id: String(updatedBook.id) });
             }}
           />
         )}
