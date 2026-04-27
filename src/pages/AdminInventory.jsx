@@ -539,7 +539,7 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
       {isModalOpen && createPortal(
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
           <div onClick={() => setIsModalOpen(false)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)' }} />
-          <div className="glass-card" style={{ maxWidth: '900px', width: '100%', padding: '2.5rem', position: 'relative', background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)' }}>
+          <div className="glass-card" style={{ maxWidth: '900px', width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: '2rem', position: 'relative', background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)' }}>
             <h2 style={{ marginBottom: '2rem', fontSize: '1.5rem', fontWeight: 'bold' }}>{editingBook ? 'Editar Elemento' : 'Nuevo Elemento'}</h2>
             <form onSubmit={handleSave}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
