@@ -229,26 +229,29 @@ const AdminCategories = ({ categories, setCategories, resourceTypes, setResource
             </tr>
           </thead>
           <tbody>
-            {currentList.map((item, index) => (
-              <tr key={item.id} style={{ borderBottom: index < currentList.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-                <td style={{ padding: '0.75rem 1rem' }}>
-                  <code style={{ background: 'rgba(99,102,241,0.1)', color: 'var(--primary)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.85rem' }}>
-                    {item.code}
-                  </code>
-                </td>
-                <td style={{ padding: '0.75rem 1rem', fontWeight: '500' }}>{item.name}</td>
-                <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
-                  <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                    <button onClick={() => handleOpenModal(item)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', padding: '0.4rem', borderRadius: '0.5rem', color: 'var(--text-muted)', cursor: 'pointer' }}>
-                      <Edit size={14} />
-                    </button>
-                    <button onClick={() => handleDelete(item)} style={{ background: 'rgba(239,68,68,0.1)', border: 'none', padding: '0.4rem', borderRadius: '0.5rem', color: '#f87171', cursor: 'pointer' }}>
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {(currentList || []).map((item, index) => {
+              if (!item || typeof item !== 'object') return null;
+              return (
+                <tr key={item.id || index} style={{ borderBottom: index < currentList.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
+                  <td style={{ padding: '0.75rem 1rem' }}>
+                    <code style={{ background: 'rgba(99,102,241,0.1)', color: 'var(--primary)', padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.85rem' }}>
+                      {item.code || '---'}
+                    </code>
+                  </td>
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: '500' }}>{item.name || 'Sin Nombre'}</td>
+                  <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                      <button onClick={() => handleOpenModal(item)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', padding: '0.4rem', borderRadius: '0.5rem', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                        <Edit size={14} />
+                      </button>
+                      <button onClick={() => handleDelete(item)} style={{ background: 'rgba(239,68,68,0.1)', border: 'none', padding: '0.4rem', borderRadius: '0.5rem', color: '#f87171', cursor: 'pointer' }}>
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
         {currentList.length === 0 && (
