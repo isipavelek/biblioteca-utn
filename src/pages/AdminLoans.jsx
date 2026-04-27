@@ -204,12 +204,22 @@ const AdminLoans = ({ loans, setLoans, books, setBooks, students, deleteLoan }) 
     }
   };
 
-  const confirmDeleteAll = () => {
-    loans.forEach(l => {
-      if (deleteLoan) deleteLoan(l.id);
-    });
-    setLoans([]);
-    setDeleteAllConfirm(false);
+  const confirmDeleteAll = async () => {
+    try {
+      const { writeBatch, doc, db } = await import('../firebase');
+      const batch = writeBatch(db);
+      loans.forEach(l => {
+        batch.delete(doc(db, 'loans', String(l.id)));
+      });
+      await batch.commit();
+      setLoans([]);
+      setDeleteAllConfirm(false);
+    } catch (err) {
+      console.error("Error deleting all loans:", err);
+      // Fallback to local only if firebase fails
+      setLoans([]);
+      setDeleteAllConfirm(false);
+    }
   };
 
   const getBookTitle = (id) => books.find(b => b.id === id)?.title || 'Elemento eliminado';
