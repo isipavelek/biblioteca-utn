@@ -33,25 +33,64 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
     image: ''
   });
 
+  const compressImage = (file) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          
+          const MAX_SIZE = 1000; // Máximo 1000px
+          if (width > height) {
+            if (width > MAX_SIZE) {
+              height *= MAX_SIZE / width;
+              width = MAX_SIZE;
+            }
+          } else {
+            if (height > MAX_SIZE) {
+              width *= MAX_SIZE / height;
+              height = MAX_SIZE;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          canvas.toBlob((blob) => {
+            resolve(blob);
+          }, 'image/jpeg', 0.8); // 80% calidad
+        };
+      };
+    });
+  };
+
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Check size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert("La imagen es muy pesada. El máximo es 5MB.");
-      return;
-    }
-
     try {
       setIsUploading(true);
-      const storageRef = ref(storage, `book-covers/${Date.now()}_${file.name}`);
-      await uploadBytes(storageRef, file);
+      
+      // Comprimir imagen antes de subir (especialmente importante para fotos de celular)
+      const compressedBlob = await compressImage(file);
+      
+      const fileName = `${Date.now()}_book.jpg`;
+      const storageRef = ref(storage, `book-covers/${fileName}`);
+      
+      await uploadBytes(storageRef, compressedBlob);
       const downloadURL = await getDownloadURL(storageRef);
+      
       setFormData(prev => ({ ...prev, image: downloadURL }));
     } catch (error) {
       console.error("Error uploading image:", error);
-      alert("Error al subir la imagen. Verifica que el archivo sea una imagen válida.");
+      alert("Error al subir la imagen. Verifica tu conexión e intenta de nuevo.");
     } finally {
       setIsUploading(false);
     }
