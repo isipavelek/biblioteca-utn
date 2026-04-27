@@ -62,7 +62,7 @@ function App() {
         ];
 
         const finalCategories = results.categories.length > 0 ? results.categories : initialCategories;
-        const finalAdmins = results.admins.length > 0 ? results.admins : initialAdmins;
+        const finalAdmins = results.admins || [];
 
         setBooks(finalBooks);
         setStudents(finalStudents);
@@ -160,7 +160,7 @@ function App() {
             <Route path="/admin/loans" element={<ProtectedRoute><AdminLoans loans={loans} setLoans={(nl)=>{setLoans(nl); nl.forEach(l=>syncItem('loans',l));}} deleteLoan={(id)=>deleteItem('loans',id)} books={books} setBooks={(nb)=>{setBooks(nb); nb.forEach(b=>syncItem('books',b));}} students={students} /></ProtectedRoute>} />
             <Route path="/admin/students" element={<ProtectedRoute><AdminStudents students={students} setStudents={(ns)=>{setStudents(ns); ns.forEach(s=>syncItem('students',s));}} deleteStudent={(id)=>deleteItem('students',id)} loans={loans} books={books} /></ProtectedRoute>} />
             <Route path="/admin/categories" element={<ProtectedRoute><AdminCategories categories={categories} setCategories={(nc)=>{setCategories(nc); nc.forEach(c=>syncItem('categories',c));}} resourceTypes={resourceTypes} setResourceTypes={(nt)=>{setResourceTypes(nt); nt.forEach(t=>syncItem('resource_types',t));}} /></ProtectedRoute>} />
-            <Route path="/admin/users" element={<ProtectedRoute><AdminAdmins admins={admins} setAdmins={(na)=>{setAdmins(na); na.forEach(a=>syncItem('admins',a));}} /></ProtectedRoute>} />
+            <Route path="/admin/users" element={<ProtectedRoute><AdminAdmins admins={admins} setAdmins={(na)=>{setAdmins(na); na.forEach(a=>syncItem('admins',a));}} deleteAdmin={(id)=>deleteItem('admins',id)} /></ProtectedRoute>} />
           </Routes>
         </main>
       </div>

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Plus, Trash2, Edit, User, Shield, Key } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 
-const AdminAdmins = ({ admins, setAdmins }) => {
+const AdminAdmins = ({ admins, setAdmins, deleteAdmin }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAdmin, setEditingAdmin] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null });
@@ -44,6 +44,7 @@ const AdminAdmins = ({ admins, setAdmins }) => {
 
   const confirmDelete = () => {
     if (deleteConfirm.id) {
+      if (deleteAdmin) deleteAdmin(deleteConfirm.id);
       setAdmins(admins.filter(a => a.id !== deleteConfirm.id));
       setDeleteConfirm({ isOpen: false, id: null });
     }
