@@ -170,22 +170,18 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
         let importedCount = 0;
 
         const normalizeStr = (s) => 
-          String(s || '').toLowerCase().trim()
+          String(s || '').toLowerCase()
             .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Accents
-            .replace(/[^a-z0-z0-9]/g, ''); // Only alphanumeric
+            .replace(/[^a-z0-9]/g, '').trim(); // Only alphanumeric
 
         jsonData.forEach((row, index) => {
           // Normalize row keys - very flexible
-          const getVal = (keys) => {
-            const allKeys = Object.keys(row);
-            const foundKey = allKeys.find(k => {
-              const normalizedK = k.toString().toLowerCase().trim()
-                .normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // Remove accents
-              return keys.some(target => {
-                const normalizedTarget = target.toLowerCase().trim()
-                  .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                return normalizedK === normalizedTarget || normalizedK.includes(normalizedTarget);
-              });
+          const allRowKeys = Object.keys(row);
+          const getVal = (aliases) => {
+            const targetAliases = aliases.map(a => normalizeStr(a));
+            const foundKey = allRowKeys.find(rk => {
+              const nrk = normalizeStr(rk);
+              return targetAliases.some(alias => nrk === alias || nrk.includes(alias));
             });
             return foundKey ? row[foundKey] : null;
           };
@@ -201,7 +197,8 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
           if (!title || String(title).trim() === '') return;
 
           const author = getVal(['Autor', 'Author', 'Escritor', 'Responsable']) || 'Desconocido';
-          const catName = String(getVal(['Categoría', 'Categoria', 'Category', 'Tema', 'Materia', 'Area']) || 'GENERAL').toUpperCase().trim();
+          const catValue = getVal(['Categoría', 'Categoria', 'Category', 'Tema', 'Materia', 'Area']);
+          const catName = String(catValue || 'GENERAL').trim();
           const editorial = getVal(['Editorial', 'Publisher', 'Edicion']) || '';
           const total = parseInt(getVal(['Cantidad', 'Stock', 'Total', 'Ejemplares', 'Unidades'])) || 1;
           const typeName = normalizeStr(getVal(['Tipo', 'Type', 'Recurso']) || 'Libro');
@@ -209,20 +206,29 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
           // Match category - SUPER FUZZY
           const normCatExcel = normalizeStr(catName);
           
-          let catObj = categories.find(c => normalizeStr(c.name) === normCatExcel) || 
-                       categories.find(c => normCatExcel.includes(normalizeStr(c.name))) ||
-                       categories.find(c => normalizeStr(c.name).includes(normCatExcel));
+          let catObj = categories.find(c => normalizeStr(c.name) === normCatExcel);
           
-          // Special cases for common typos provided by user
           if (!catObj) {
-            if (normCatExcel.includes('literarura') || normCatExcel.includes('literaruta')) {
+            catObj = categories.find(c => {
+              const nName = normalizeStr(c.name);
+              return normCatExcel.includes(nName) || nName.includes(normCatExcel);
+            });
+          }
+          
+          // Special cases for common typos
+          if (!catObj) {
+            if (normCatExcel.includes('literar') || normCatExcel.includes('literat')) {
               catObj = categories.find(c => normalizeStr(c.name).includes('literatura'));
-            } else if (normCatExcel.includes('matematicas')) {
+            } else if (normCatExcel.includes('matem')) {
               catObj = categories.find(c => normalizeStr(c.name).includes('matematica'));
+            } else if (normCatExcel.includes('sociales')) {
+              catObj = categories.find(c => normalizeStr(c.name).includes('sociales'));
+            } else if (normCatExcel.includes('naturales')) {
+              catObj = categories.find(c => normalizeStr(c.name).includes('naturales'));
             }
           }
 
-          if (!catObj) {
+          if (!catObj || normCatExcel === 'general') {
             catObj = categories.find(c => c.name === 'GENERAL') || categories[0];
           }
 
