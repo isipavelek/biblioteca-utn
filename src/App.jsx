@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { initialCategories, initialAdmins } from './data';
 import { db, auth } from './firebase';
-import { collection, getDocs, setDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, setDoc, doc, deleteDoc } from 'firebase/firestore';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import Home from './pages/Home';
 import AdminDashboard from './pages/AdminDashboard';
@@ -112,9 +112,13 @@ function App() {
 
   const deleteItem = async (col, id) => {
     try {
-      const { deleteDoc } = await import('firebase/firestore');
+      console.log(`Eliminando ${col}/${id}...`);
       await deleteDoc(doc(db, col, String(id)));
-    } catch (e) { console.error(e); }
+      console.log(`Eliminado con éxito: ${col}/${id}`);
+    } catch (e) { 
+      console.error(`Error eliminando ${col}/${id}:`, e); 
+      throw e; 
+    }
   };
 
   if (loading) return (

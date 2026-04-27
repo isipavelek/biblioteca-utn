@@ -42,10 +42,11 @@ const AdminAdmins = ({ admins, setAdmins, deleteAdmin }) => {
     setDeleteConfirm({ isOpen: true, id });
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (deleteConfirm.id) {
-      if (deleteAdmin) deleteAdmin(deleteConfirm.id);
-      setAdmins(admins.filter(a => a.id !== deleteConfirm.id));
+      const adminId = String(deleteConfirm.id);
+      if (deleteAdmin) await deleteAdmin(adminId);
+      setAdmins(admins.filter(a => String(a.id) !== adminId));
       setDeleteConfirm({ isOpen: false, id: null });
     }
   };

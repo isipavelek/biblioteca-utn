@@ -130,8 +130,10 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
     setDeleteConfirm({ isOpen: true, id });
   };
 
-  const confirmDelete = () => {
-    deleteItem(deleteConfirm.id);
+  const confirmDelete = async () => {
+    const bookId = String(deleteConfirm.id);
+    if (deleteItem) await deleteItem(bookId);
+    setBooks(books.filter(b => String(b.id) !== bookId));
     setDeleteConfirm({ isOpen: false, id: null });
   };
 

@@ -129,10 +129,11 @@ const AdminStudents = ({ students, setStudents, deleteStudent, loans = [], books
     setDeleteConfirm({ isOpen: true, id });
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (deleteConfirm.id) {
-      if (deleteStudent) deleteStudent(deleteConfirm.id);
-      setStudents(students.filter(s => s.id !== deleteConfirm.id));
+      const studentId = String(deleteConfirm.id);
+      if (deleteStudent) await deleteStudent(studentId);
+      setStudents(students.filter(s => String(s.id) !== studentId));
       setDeleteConfirm({ isOpen: false, id: null });
     }
   };
