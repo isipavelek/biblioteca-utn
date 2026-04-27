@@ -140,6 +140,8 @@ button {
 .gap-4 { gap: 1rem; }
 .flex-wrap { flex-wrap: wrap; }
 .block { display: block; }
+.relative { position: relative; }
+.absolute { position: absolute; }
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
