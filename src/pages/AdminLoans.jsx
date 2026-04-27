@@ -131,7 +131,7 @@ const AdminLoans = ({ loans, setLoans, books, setBooks, students, deleteLoan }) 
   });
 
   const getBaseCode = (id) => {
-    const book = books.find(b => b.id === id);
+    const book = books.find(b => String(b.id) === String(id));
     if (!book) return '000000000';
     const t = (book.typeCode || '001').padStart(3, '0');
     const c = (book.categoryCode || '001').padStart(3, '0');
@@ -141,8 +141,8 @@ const AdminLoans = ({ loans, setLoans, books, setBooks, students, deleteLoan }) 
 
   const handleCreateLoan = (e) => {
     e.preventDefault();
-    const bookId = parseInt(formData.bookId);
-    const book = books.find(b => b.id === bookId);
+    const bookId = String(formData.bookId);
+    const book = books.find(b => String(b.id) === bookId);
 
     if (!book || book.available_count <= 0) {
       alert('Este elemento no tiene unidades disponibles.');
@@ -154,9 +154,9 @@ const AdminLoans = ({ loans, setLoans, books, setBooks, students, deleteLoan }) 
     const fullCode = `${base}${unit}`;
 
     const newLoan = {
-      id: Date.now(),
+      id: String(Date.now()),
       bookId: bookId,
-      studentId: parseInt(formData.studentId),
+      studentId: String(formData.studentId),
       loanDate: formData.loanDate,
       returnDate: null,
       status: 'active',
@@ -177,13 +177,13 @@ const AdminLoans = ({ loans, setLoans, books, setBooks, students, deleteLoan }) 
   };
 
   const handleConfirmReturn = () => {
-    setLoans(loans.map(l => l.id === selectedLoan.id ? { 
+    setLoans(loans.map(l => String(l.id) === String(selectedLoan.id) ? { 
       ...l, 
       status: 'returned', 
       returnDate: new Date().toISOString().split('T')[0],
       observations: observations 
     } : l));
-    setBooks(books.map(b => b.id === selectedLoan.bookId ? { ...b, available_count: b.available_count + 1 } : b));
+    setBooks(books.map(b => String(b.id) === String(selectedLoan.bookId) ? { ...b, available_count: b.available_count + 1 } : b));
     setIsReturnModalOpen(false);
     setSelectedLoan(null);
   };
@@ -223,8 +223,8 @@ const AdminLoans = ({ loans, setLoans, books, setBooks, students, deleteLoan }) 
     }
   };
 
-  const getBookTitle = (id) => books.find(b => b.id === id)?.title || 'Elemento eliminado';
-  const getStudentName = (id) => students.find(s => s.id === id)?.name || 'Usuario eliminado';
+  const getBookTitle = (id) => books.find(b => String(b.id) === String(id))?.title || 'Elemento eliminado';
+  const getStudentName = (id) => students.find(s => String(s.id) === String(id))?.name || 'Usuario eliminado';
 
   const filteredLoans = loans.filter(l => 
     getBookTitle(l.bookId).toLowerCase().includes(searchTerm.toLowerCase()) || 

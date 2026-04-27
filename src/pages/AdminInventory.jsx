@@ -53,7 +53,7 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
     const newEnd = newStart + (parseInt(newItem.total_count) || 1) - 1;
     
     for (const item of items) {
-      if (item.id === newItem.id) continue;
+      if (String(item.id) === String(newItem.id)) continue;
       
       // Only check overlap if Type and Category codes are the same
       if (item.typeCode === newItem.typeCode && item.categoryCode === newItem.categoryCode) {
@@ -119,9 +119,9 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
     }
 
     if (editingBook) {
-      setBooks(books.map(b => b.id === editingBook.id ? { ...formData, available_count: b.available_count + (formData.total_count - b.total_count) } : b));
+      setBooks(books.map(b => String(b.id) === String(editingBook.id) ? { ...formData, available_count: b.available_count + (formData.total_count - b.total_count) } : b));
     } else {
-      setBooks([...books, { ...formData, id: Date.now(), available_count: formData.total_count }]);
+      setBooks([...books, { ...formData, id: String(Date.now()), available_count: formData.total_count }]);
     }
     setIsModalOpen(false);
   };
@@ -321,7 +321,7 @@ const AdminInventory = ({ books, setBooks, deleteItem, categories, resourceTypes
           const nextItemCode = String(lastCode + 1).padStart(3, '0');
 
           const newBook = {
-            id: Date.now() + index,
+            id: String(Date.now() + index),
             title,
             author,
             category: catObj.name,
